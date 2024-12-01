@@ -1,6 +1,8 @@
 package aoc._2024;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -51,16 +53,17 @@ public class Day1 {
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
-        int part2TestResult = part2(testLines);
-        log.info("{} (should be {})", part2TestResult, expectedTestResult);
+        expectedTestResult = 31;
+        long part2TestResult = part2(testLines);
+        log.info("The similarity score between the two lists is: {} (should be {})", part2TestResult,
+                 expectedTestResult);
 
         if (part2TestResult != expectedTestResult)
             log.error("The test result doesn't match the expected value.");
 
         log.setLevel(Level.INFO);
 
-        log.info("{}", part2(lines));
+        log.info("The similarity score between the two lists is: {}", part2(lines));
     }
 
     /**
@@ -69,11 +72,13 @@ public class Day1 {
     private static int part1(final List<String> lines) {
         List<Integer> leftList = lines.stream()
                                       .map(l -> l.split(" +")[0])
-                                      .map(Integer::valueOf).sorted()
+                                      .map(Integer::valueOf)
+                                      .sorted()
                                       .collect(Collectors.toList());
         List<Integer> rightList = lines.stream()
                                        .map(l -> l.split(" +")[1])
-                                       .map(Integer::valueOf).sorted()
+                                       .map(Integer::valueOf)
+                                       .sorted()
                                        .collect(Collectors.toList());
 
         int sum = IntStream.range(0, leftList.size())
@@ -83,9 +88,26 @@ public class Day1 {
         return sum;
     }
 
-    private static int part2(final List<String> lines) {
+    /**
+     * This time, you'll need to figure out exactly how often each number from the left list appears in the right list.
+     * Calculate a total similarity score by adding up each number in the left list after multiplying it by the number
+     * of times that number appears in the right list.
+     */
+    private static long part2(final List<String> lines) {
+        Map<Integer, Long> rightList = lines.stream()
+                                            .map(l -> l.split(" +")[1])
+                                            .map(Integer::valueOf)
+                                            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        
+        log.debug("Right list: {}", rightList);
 
-        return -1;
+        Long leftList = lines.stream()
+                             .map(l -> l.split(" +")[0])
+                             .map(Integer::valueOf)
+                             .map(i -> i*rightList.getOrDefault(i, 0L))
+                             .collect(Collectors.summingLong(Long::longValue));
+
+        return leftList;
     }
 
 }
