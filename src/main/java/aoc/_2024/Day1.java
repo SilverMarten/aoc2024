@@ -2,10 +2,10 @@ package aoc._2024;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.LoggerFactory;
 
 import aoc.FileUtils;
@@ -94,18 +94,18 @@ public class Day1 {
      * of times that number appears in the right list.
      */
     private static long part2(final List<String> lines) {
-        Map<Integer, Long> rightList = lines.stream()
-                                            .map(l -> l.split(" +")[1])
-                                            .map(Integer::valueOf)
-                                            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        
-        log.debug("Right list: {}", rightList);
+        Map<Integer, Integer> rightList = CollectionUtils.getCardinalityMap(lines.stream()
+                                                                                 .map(l -> l.split(" +")[1])
+                                                                                 .map(Integer::valueOf)
+                                                                                 .collect(Collectors.toList()));
 
-        Long leftList = lines.stream()
-                             .map(l -> l.split(" +")[0])
-                             .map(Integer::valueOf)
-                             .map(i -> i*rightList.getOrDefault(i, 0L))
-                             .collect(Collectors.summingLong(Long::longValue));
+        log.debug("Right list cardinality: {}", rightList);
+
+        int leftList = lines.stream()
+                            .map(l -> l.split(" +")[0])
+                            .map(Integer::valueOf)
+                            .mapToInt(i -> i * rightList.getOrDefault(i, 0))
+                            .sum();
 
         return leftList;
     }
