@@ -1,6 +1,9 @@
 package aoc._2024;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.slf4j.LoggerFactory;
 
 import aoc.FileUtils;
@@ -30,9 +33,9 @@ public class Day1 {
         // Read the test file
         List<String> testLines = FileUtils.readFile(TEST_INPUT_TXT);
 
-        int expectedTestResult = 1_234_567_890;
+        int expectedTestResult = 11;
         int part1TestResult = part1(testLines);
-        log.info("{} (should be {})", part1TestResult, expectedTestResult);
+        log.info("The total distance between the lists is: {} (should be {})", part1TestResult, expectedTestResult);
 
         if (part1TestResult != expectedTestResult)
             log.error("The test result doesn't match the expected value.");
@@ -42,7 +45,7 @@ public class Day1 {
         // Read the real file
         List<String> lines = FileUtils.readFile(INPUT_TXT);
 
-        log.info("{}", part1(lines));
+        log.info("The total distance between the lists is: {}", part1(lines));
 
         // PART 2
         log.info("Part 2:");
@@ -60,9 +63,24 @@ public class Day1 {
         log.info("{}", part2(lines));
     }
 
+    /**
+     * Your actual left and right lists contain many location IDs. What is the total distance between your lists?
+     */
     private static int part1(final List<String> lines) {
+        List<Integer> leftList = lines.stream()
+                                      .map(l -> l.split(" +")[0])
+                                      .map(Integer::valueOf).sorted()
+                                      .collect(Collectors.toList());
+        List<Integer> rightList = lines.stream()
+                                       .map(l -> l.split(" +")[1])
+                                       .map(Integer::valueOf).sorted()
+                                       .collect(Collectors.toList());
 
-        return -1;
+        int sum = IntStream.range(0, leftList.size())
+                           .map(i -> Math.abs(leftList.get(i) - rightList.get(i)))
+                           .sum();
+
+        return sum;
     }
 
     private static int part2(final List<String> lines) {
