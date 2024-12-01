@@ -30,8 +30,8 @@ public class Day${day} {
         // Read the test file
         List<String> testLines = FileUtils.readFile(TEST_INPUT_TXT);
 
-        int expectedTestResult = 1_234_567_890;
-        int part1TestResult = part1(testLines);
+        long expectedTestResult = 1_234_567_890L;
+        long part1TestResult = part1(testLines);
         log.info("{} (should be {})", part1TestResult, expectedTestResult);
 
         if (part1TestResult != expectedTestResult)
@@ -48,8 +48,8 @@ public class Day${day} {
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
-        int part2TestResult = part2(testLines);
+        expectedTestResult = 1_234_567_890L;
+        long part2TestResult = part2(testLines);
         log.info("{} (should be {})", part2TestResult, expectedTestResult);
 
         if (part2TestResult != expectedTestResult)
@@ -60,12 +60,12 @@ public class Day${day} {
         log.info("{}", part2(lines));
     }
 
-    private static int part1(final List<String> lines) {
+    private static long part1(final List<String> lines) {
 
         return -1;
     }
 
-    private static int part2(final List<String> lines) {
+    private static long part2(final List<String> lines) {
 
         return -1;
     }
