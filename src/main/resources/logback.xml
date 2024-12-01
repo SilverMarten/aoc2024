@@ -1,0 +1,25 @@
+<configuration>
+
+    <appender name="colour"
+        class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%highlight(%d{HH:mm:ss.SSS} - %msg%n)</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="stdout"
+        class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="warn">
+        <appender-ref ref="stdout" />
+    </root>
+
+
+    <logger name="aoc" level="info" additivity="false">
+        <appender-ref ref="colour" />
+    </logger>
+</configuration>
