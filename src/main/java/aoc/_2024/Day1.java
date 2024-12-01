@@ -1,5 +1,6 @@
 package aoc._2024;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -70,16 +71,17 @@ public class Day1 {
      * Your actual left and right lists contain many location IDs. What is the total distance between your lists?
      */
     private static int part1(final List<String> lines) {
-        List<Integer> leftList = lines.stream()
-                                      .map(l -> l.split(" +")[0])
-                                      .map(Integer::valueOf)
-                                      .sorted()
-                                      .collect(Collectors.toList());
-        List<Integer> rightList = lines.stream()
-                                       .map(l -> l.split(" +")[1])
-                                       .map(Integer::valueOf)
-                                       .sorted()
-                                       .collect(Collectors.toList());
+        var leftList = new ArrayList<Integer>();
+        var rightList = new ArrayList<Integer>();
+
+        lines.forEach(l -> {
+            String[] split = l.split(" +");
+            leftList.add(Integer.valueOf(split[0]));
+            rightList.add(Integer.valueOf(split[1]));
+        });
+
+        leftList.sort(null);
+        rightList.sort(null);
 
         int sum = IntStream.range(0, leftList.size())
                            .map(i -> Math.abs(leftList.get(i) - rightList.get(i)))
@@ -94,17 +96,15 @@ public class Day1 {
      * of times that number appears in the right list.
      */
     private static long part2(final List<String> lines) {
-        Map<Integer, Integer> rightList = CollectionUtils.getCardinalityMap(lines.stream()
-                                                                                 .map(l -> l.split(" +")[1])
-                                                                                 .map(Integer::valueOf)
-                                                                                 .collect(Collectors.toList()));
+        Map<String, Integer> rightList = CollectionUtils.getCardinalityMap(lines.stream()
+                                                                                .map(l -> l.split(" +")[1])
+                                                                                .collect(Collectors.toList()));
 
         log.debug("Right list cardinality: {}", rightList);
 
         int leftList = lines.stream()
                             .map(l -> l.split(" +")[0])
-                            .map(Integer::valueOf)
-                            .mapToInt(i -> i * rightList.getOrDefault(i, 0))
+                            .mapToInt(i -> Integer.parseInt(i) * rightList.getOrDefault(i, 0))
                             .sum();
 
         return leftList;
