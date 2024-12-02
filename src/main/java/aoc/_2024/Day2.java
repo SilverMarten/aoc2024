@@ -1,5 +1,6 @@
 package aoc._2024;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -27,6 +28,8 @@ public class Day2 {
 
     private static final String TEST_INPUT_TXT = "testInput/Day2.txt";
 
+
+
     public static void main(String[] args) {
 
         log.info("Part 1:");
@@ -53,17 +56,19 @@ public class Day2 {
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890L;
+        expectedTestResult = 4;
         long part2TestResult = part2(testLines);
-        log.info("{} (should be {})", part2TestResult, expectedTestResult);
+        log.info("{} reports are safe (should be {})", part2TestResult, expectedTestResult);
 
         if (part2TestResult != expectedTestResult)
             log.error("The test result doesn't match the expected value.");
 
         log.setLevel(Level.INFO);
 
-        log.info("{}", part2(lines));
+        log.info("{} reports are safe", part2(lines));
     }
+
+
 
     /**
      * Analyze the unusual data from the engineers. How many reports are safe?
@@ -78,18 +83,47 @@ public class Day2 {
                     .count();
     }
 
+
+
     private static boolean safe(List<Integer> l) {
         log.debug("{}", l);
         Range<Integer> safeRange = Range.of(1, 3);
         boolean increasing = l.get(1) > l.get(0);
         return IntStream.range(0, l.size() - 1)
-                        .allMatch(i -> safeRange.contains(Math.abs(l.get(i) - l.get(i + 1)))
-                                       && !(increasing ^ l.get(i + 1) > l.get(i)));
+                        .allMatch(i -> safeRange.contains(Math.abs(l.get(i) - l.get(i + 1))) &&
+                                       !(increasing ^ l.get(i + 1) > l.get(i)));
     }
 
-    private static long part2(final List<String> lines) {
 
-        return -1;
+
+    /**
+     * Update your analysis by handling situations where the Problem Dampener
+     * can remove a single level from unsafe reports. How many reports are now
+     * safe?
+     */
+    private static long part2(final List<String> lines) {
+        return lines.stream()
+                    .map(l -> Stream.of(l.split(" "))
+                                    .map(Integer::valueOf)
+                                    .collect(Collectors.toList()))
+                    .map(Day2::safeish)
+                    .filter(Boolean::booleanValue)
+                    .count();
+    }
+
+
+
+    private static boolean safeish(List<Integer> l) {
+        log.debug("{}", l);
+
+        // Remove one at a time, and see it any of them are safe
+        return IntStream.range(0, l.size())
+                        .mapToObj(i -> {
+                            var l2 = new ArrayList<>(l);
+                            l2.remove(i);
+                            return l2;
+                        })
+                        .anyMatch(Day2::safe);
     }
 
 }
