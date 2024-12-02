@@ -3,7 +3,6 @@ package aoc._2024;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -83,11 +82,9 @@ public class Day1 {
         leftList.sort(null);
         rightList.sort(null);
 
-        int sum = IntStream.range(0, leftList.size())
-                           .map(i -> Math.abs(leftList.get(i) - rightList.get(i)))
-                           .sum();
-
-        return sum;
+        return IntStream.range(0, leftList.size())
+                        .map(i -> Math.abs(leftList.get(i) - rightList.get(i)))
+                        .sum();
     }
 
     /**
@@ -98,16 +95,14 @@ public class Day1 {
     private static long part2(final List<String> lines) {
         Map<String, Integer> rightList = CollectionUtils.getCardinalityMap(lines.stream()
                                                                                 .map(l -> l.split(" +")[1])
-                                                                                .collect(Collectors.toList()));
+                                                                                .toList());
 
         log.debug("Right list cardinality: {}", rightList);
 
-        int leftList = lines.stream()
-                            .map(l -> l.split(" +")[0])
-                            .mapToInt(i -> Integer.parseInt(i) * rightList.getOrDefault(i, 0))
-                            .sum();
-
-        return leftList;
+        return lines.stream()
+                    .map(l -> l.split(" +")[0])
+                    .mapToInt(i -> Integer.parseInt(i) * rightList.getOrDefault(i, 0))
+                    .sum();
     }
 
 }

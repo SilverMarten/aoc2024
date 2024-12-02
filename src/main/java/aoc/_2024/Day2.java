@@ -2,7 +2,6 @@ package aoc._2024;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -77,7 +76,7 @@ public class Day2 {
         return lines.stream()
                     .map(l -> Stream.of(l.split(" "))
                                     .map(Integer::valueOf)
-                                    .collect(Collectors.toList()))
+                                    .toList())
                     .map(Day2::safe)
                     .filter(Boolean::booleanValue)
                     .count();
@@ -105,7 +104,7 @@ public class Day2 {
         return lines.stream()
                     .map(l -> Stream.of(l.split(" "))
                                     .map(Integer::valueOf)
-                                    .collect(Collectors.toList()))
+                                    .toList())
                     .map(Day2::safeish)
                     .filter(Boolean::booleanValue)
                     .count();
