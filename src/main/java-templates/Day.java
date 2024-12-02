@@ -24,17 +24,21 @@ public class Day${day} {
 
     public static void main(String[] args) {
 
+        var resultMessage = "{}";
+        
         log.info("Part 1:");
         log.setLevel(Level.DEBUG);
 
         // Read the test file
         List<String> testLines = FileUtils.readFile(TEST_INPUT_TXT);
 
-        long expectedTestResult = 1_234_567_890L;
-        long part1TestResult = part1(testLines);
-        log.info("{} (should be {})", part1TestResult, expectedTestResult);
+        var expectedTestResult = 1_234_567_890;
+        var testResult = part1(testLines);
+        
+        log.info("Should be {}", expectedTestResult);
+        log.info(resultMessage, testResult);
 
-        if (part1TestResult != expectedTestResult)
+        if (testResult != expectedTestResult)
             log.error("The test result doesn't match the expected value.");
 
         log.setLevel(Level.INFO);
@@ -42,30 +46,44 @@ public class Day${day} {
         // Read the real file
         List<String> lines = FileUtils.readFile(INPUT_TXT);
 
-        log.info("{}", part1(lines));
+        log.info(resultMessage, part1(lines));
 
         // PART 2
+        resultMessage = "{}";
+        
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890L;
-        long part2TestResult = part2(testLines);
-        log.info("{} (should be {})", part2TestResult, expectedTestResult);
+        expectedTestResult = 1_234_567_890;
+        testResult = part2(testLines);
+        
+        log.info("Should be {}", expectedTestResult);
+        log.info(resultMessage, testResult);
 
-        if (part2TestResult != expectedTestResult)
+        if (testResult != expectedTestResult)
             log.error("The test result doesn't match the expected value.");
 
         log.setLevel(Level.INFO);
 
-        log.info("{}", part2(lines));
+        log.info(resultMessage, part2(lines));
     }
 
-    private static long part1(final List<String> lines) {
+    /**
+     * 
+     * @param lines The lines read from the input.
+     * @return The value calculated for part 1.
+     */
+    private static int part1(final List<String> lines) {
 
         return -1;
     }
 
-    private static long part2(final List<String> lines) {
+    /**
+     * 
+     * @param lines The lines read from the input.
+     * @return The value calculated for part 2.
+     */
+    private static int part2(final List<String> lines) {
 
         return -1;
     }

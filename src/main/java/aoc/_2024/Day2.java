@@ -27,9 +27,9 @@ public class Day2 {
 
     private static final String TEST_INPUT_TXT = "testInput/Day2.txt";
 
-
-
     public static void main(String[] args) {
+
+        var resultMessage = "{} reports are safe";
 
         log.info("Part 1:");
         log.setLevel(Level.DEBUG);
@@ -37,11 +37,13 @@ public class Day2 {
         // Read the test file
         List<String> testLines = FileUtils.readFile(TEST_INPUT_TXT);
 
-        long expectedTestResult = 2;
-        long part1TestResult = part1(testLines);
-        log.info("{} reports are safe (should be {})", part1TestResult, expectedTestResult);
+        var expectedTestResult = 2;
+        var testResult = part1(testLines);
+        
+        log.info("Should be {}", expectedTestResult);
+        log.info(resultMessage, testResult);
 
-        if (part1TestResult != expectedTestResult)
+        if (testResult != expectedTestResult)
             log.error("The test result doesn't match the expected value.");
 
         log.setLevel(Level.INFO);
@@ -49,25 +51,26 @@ public class Day2 {
         // Read the real file
         List<String> lines = FileUtils.readFile(INPUT_TXT);
 
-        log.info("{} reports are safe", part1(lines));
+        log.info(resultMessage, part1(lines));
 
         // PART 2
+//        resultMessage = "{} reports are safe";
+        
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
         expectedTestResult = 4;
-        long part2TestResult = part2(testLines);
-        log.info("{} reports are safe (should be {})", part2TestResult, expectedTestResult);
+        testResult = part2(testLines);
+        log.info("Should be {}", expectedTestResult);
+        log.info(resultMessage, testResult);
 
-        if (part2TestResult != expectedTestResult)
+        if (testResult != expectedTestResult)
             log.error("The test result doesn't match the expected value.");
 
         log.setLevel(Level.INFO);
 
-        log.info("{} reports are safe", part2(lines));
+        log.info(resultMessage, part2(lines));
     }
-
-
 
     /**
      * Analyze the unusual data from the engineers. How many reports are safe?
@@ -82,8 +85,6 @@ public class Day2 {
                     .count();
     }
 
-
-
     private static boolean safe(List<Integer> l) {
         log.debug("{}", l);
         Range<Integer> safeRange = Range.of(1, 3);
@@ -92,8 +93,6 @@ public class Day2 {
                         .allMatch(i -> safeRange.contains(Math.abs(l.get(i) - l.get(i + 1))) &&
                                        !(increasing ^ l.get(i + 1) > l.get(i)));
     }
-
-
 
     /**
      * Update your analysis by handling situations where the Problem Dampener
@@ -109,8 +108,6 @@ public class Day2 {
                     .filter(Boolean::booleanValue)
                     .count();
     }
-
-
 
     private static boolean safeish(List<Integer> l) {
         log.debug("{}", l);
