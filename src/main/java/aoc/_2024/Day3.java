@@ -1,6 +1,7 @@
 package aoc._2024;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,12 +56,12 @@ public class Day3 {
         log.info(resultMessage, part1(lines));
 
         // PART 2
-        resultMessage = "{}";
+        //        resultMessage = "{}";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
+        expectedTestResult = 48;
         testResult = part2(testLines);
 
         log.info("Should be {}", expectedTestResult);
@@ -81,7 +82,7 @@ public class Day3 {
      * get if you add up all of the results of the multiplications?
      * 
      * @param lines The lines read from the input.
-     * @return The sum of the valid {@code mul}.
+     * @return The sum of the valid {@code mul} expressions.
      */
     private static int part1(final List<String> lines) {
 
@@ -122,13 +123,36 @@ public class Day3 {
 
 
     /**
+     * Handle the new instructions; what do you get if you add up all of the
+     * results of just the enabled multiplications?
      * 
      * @param lines The lines read from the input.
-     * @return The value calculated for part 2.
+     * @return The sum of the valid {@code mul} expressions when enabled.
      */
     private static int part2(final List<String> lines) {
 
-        return -1;
+        Pattern regex = Pattern.compile("mul\\(\\d{1,3},\\d{1,3}\\)|do(n't)?\\(\\)");
+
+        List<String> validExpressions = lines.stream()
+                                             .map(regex::matcher)
+                                             .flatMap(Matcher::results)
+                                             .map(MatchResult::group)
+                                             .toList();
+
+        log.debug("Valid expressions found: {}", validExpressions);
+
+        AtomicBoolean enabled = new AtomicBoolean(true);
+        return validExpressions.stream()
+                               .mapToInt(i -> {
+                                   var val = 0;
+                                   switch (i) {
+                                       case "do()" -> enabled.set(true);
+                                       case "don't()" -> enabled.set(false);
+                                       default -> val = enabled.get() ? processInstruction(i) : 0;
+                                   }
+                                   return val;
+                               })
+                               .sum();
     }
 
 }
