@@ -59,10 +59,23 @@ tasks.register('newDay', Copy){
         // Download the puzzle input
         if(project.hasProperty('sessionId')){
             try {
-                HttpURLConnection con = (HttpURLConnection) new URL('https://adventofcode.com/2024/day/' + nextDay + '/input').openConnection()
+				def proxy = null
+				def proxyAuth = "" 
+				// Configure proxy, if settings are present
+				if(project.hasProperty("proxyHost")){
+					proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("$proxyHost", Integer.parseInt("$proxyPort")))
+					Authenticator.setDefault(new Authenticator() {
+						protected PasswordAuthentication getPasswordAuthentication() {
+					        return new PasswordAuthentication("$proxyUser", "$proxyPassword".toCharArray());
+					    }
+					});
+					proxyAuth = "Basic " + new String(Base64.getEncoder().encode(("$proxyUser" + ":" + "$proxyPassword").getBytes()))
+				}
+
+                def con = new URL('https://adventofcode.com/2024/day/' + nextDay + '/input').openConnection(proxy)
                 con.setRequestMethod("GET")
                 con.addRequestProperty("Cookie","session=$sessionId")
-                //con.addRequestProperty("Proxy-Authorization","Basic $proxyAuth")
+                con.addRequestProperty("Proxy-Authorization", proxyAuth)
                 BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))
                 
                 inputFile.withOutputStream{ it << in }
