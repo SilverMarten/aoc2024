@@ -18,9 +18,14 @@ import org.apache.commons.lang3.ArrayUtils;
  * A coordinate of row and column.
  */
 public final class Coordinate implements Comparable<Coordinate> {
+
     private final int row;
+
     private final int column;
+
     private final int hashCode;
+
+
 
     public Coordinate(int row, int column) {
         this.row = row;
@@ -28,17 +33,57 @@ public final class Coordinate implements Comparable<Coordinate> {
         this.hashCode = computeHashCode();
     }
 
+
+
+    /**
+     * Create a new coordinate by translating this one by the row and column
+     * values in the given parameter.
+     * 
+     * @param by The {@link Coordinate} containing the row and column values to
+     *            translate this instance by.
+     * @return A new {@link Coordinate} instance representing the translation of
+     *         this instance by the given parameters.
+     */
+    public Coordinate translate(Coordinate by) {
+        return Coordinate.of(getRow() + by.getRow(), getColumn() + by.getColumn());
+    }
+
+
+
+    /**
+     * Create a new coordinate by translating this one in the given direction
+     * and distance.
+     * 
+     * @param direction The {@link Direction} in which to translate this
+     *            instance.
+     * @param distance The distance by which to translate this instance.
+     * @return A new {@link Coordinate} instance representing the translation of
+     *         this instance by the given parameters.
+     */
+    public Coordinate translate(Direction direction, int distance) {
+        return Coordinate.of(getRow() + direction.getTranslation().getRow() * distance,
+                             getColumn() + direction.getTranslation().getColumn() * distance);
+    }
+
+
+
     public int getRow() {
         return row;
     }
+
+
 
     public int getColumn() {
         return column;
     }
 
+
+
     public static Coordinate of(int row, int column) {
         return new Coordinate(row, column);
     }
+
+
 
     /**
      * @return The set of adjacent coordinates to this coordinate.
@@ -52,6 +97,8 @@ public final class Coordinate implements Comparable<Coordinate> {
                         .collect(Collectors.toSet());
     }
 
+
+
     /**
      * @return The set of orthogonally adjacent coordinates to this coordinate.
      */
@@ -64,6 +111,8 @@ public final class Coordinate implements Comparable<Coordinate> {
                         .collect(Collectors.toSet());
     }
 
+
+
     /**
      * Return the pre-generated hashCode for this Coordinate.
      */
@@ -71,6 +120,8 @@ public final class Coordinate implements Comparable<Coordinate> {
     public int hashCode() {
         return this.hashCode;
     }
+
+
 
     /**
      * Compute the hashCode for this Coordinate so it can be cached by the
@@ -85,6 +136,8 @@ public final class Coordinate implements Comparable<Coordinate> {
         result = prime * result + row;
         return result;
     }
+
+
 
     @Override
     public boolean equals(Object obj) {
@@ -102,10 +155,14 @@ public final class Coordinate implements Comparable<Coordinate> {
         return true;
     }
 
+
+
     @Override
     public String toString() {
         return String.format("(%s, %s)", row, column);
     }
+
+
 
     @Override
     public int compareTo(Coordinate o) {
@@ -114,11 +171,12 @@ public final class Coordinate implements Comparable<Coordinate> {
         return result == 0 ? Integer.compare(this.column, o.column) : result;
     }
 
+
+
     /**
      * Create a map of the coordinates of digits.
      * 
-     * @param lines
-     *     The lines to find and map the locations of digits.
+     * @param lines The lines to find and map the locations of digits.
      * @return A map of coordinates to the digit found at those coordinates.
      */
     public static Map<Coordinate, Integer> mapDigits(List<String> lines) {
@@ -140,28 +198,31 @@ public final class Coordinate implements Comparable<Coordinate> {
         return coordinates;
     }
 
+
+
     /**
      * Create a map of the coordinates of non-blank characters. The default
      * blank character is a period '.'.
      * 
-     * @param lines
-     *     The lines to find and map the locations of non-blank
-     *     characters.
+     * @param lines The lines to find and map the locations of non-blank
+     *            characters.
      * @return A map of coordinates to the character found at those coordinates.
+     *         The coordinate range starts at 1 and increases.
      */
     public static Map<Coordinate, Character> mapCoordinates(List<String> lines) {
         return mapCoordinates(lines, '.');
     }
 
+
+
     /**
      * Create a map of the coordinates of non-blank characters.
      * 
-     * @param lines
-     *     The lines to find and map the locations of non-blank
-     *     characters.
-     * @param blankSpace
-     *     The character to be treated as a blank space.
+     * @param lines The lines to find and map the locations of non-blank
+     *            characters.
+     * @param blankSpace The character to be treated as a blank space.
      * @return A map of coordinates to the character found at those coordinates.
+     *         The coordinate range starts at 1 and increases.
      */
     public static Map<Coordinate, Character> mapCoordinates(List<String> lines, char blankSpace) {
 
@@ -182,29 +243,32 @@ public final class Coordinate implements Comparable<Coordinate> {
         return coordinates;
     }
 
+
+
     /**
      * Map a list of strings into a set of coordinates of the locations of # in
      * the strings.
      * 
-     * @param lines
-     *     The lines to find and map the locations of #s.
-     * @return The set of coordinates of the locations of #s.
+     * @param lines The lines to find and map the locations of #s.
+     * @return The set of coordinates of the locations of #s. The coordinate
+     *         range starts at 1 and increases.
      */
     public static Set<Coordinate> findCoordinates(List<String> lines) {
         return findCoordinates(lines, '#');
     }
 
+
+
     /**
      * Map a list of strings into a set of coordinates of the locations of a
      * given character in the strings.
      * 
-     * @param lines
-     *     The lines to find and map the locations of the given
-     *     character.
-     * @param charToFind
-     *     The character to find in the strings and return the
-     *     coordinates of.
+     * @param lines The lines to find and map the locations of the given
+     *            character.
+     * @param charToFind The character to find in the strings and return the
+     *            coordinates of.
      * @return The set of coordinates of the locations of the given character.
+     *         The coordinate range starts at 1 and increases.
      */
     public static Set<Coordinate> findCoordinates(List<String> lines, char charToFind) {
         AtomicInteger row = new AtomicInteger(1);
@@ -221,15 +285,16 @@ public final class Coordinate implements Comparable<Coordinate> {
         return coordinates;
     }
 
+
+
     /**
      * Create a printout of the digit map, using '.' for empty spaces.
      * 
-     * @param rows
-     *     The number of rows in the map.
-     * @param columns
-     *     The number of columns in the map.
-     * @param coordinates
-     *     The map of coordinates to display the corresponding digit.
+     * @param rows The number of rows in the map.
+     * @param columns The number of columns in the map.
+     * @param coordinates The map of coordinates to display the corresponding
+     *            digit. The coordinate range is expected to start at 1 and
+     *            increase.
      * 
      * @return A string representation of the map.
      */
@@ -241,8 +306,7 @@ public final class Coordinate implements Comparable<Coordinate> {
 
         while (location < (rows + 1) * columns) {
             printout.append((char) (coordinates.getOrDefault(new Coordinate(location / columns, location % columns + 1),
-                                                             '.' - '0')
-                                    +
+                                                             '.' - '0') +
                                     '0'));
 
             if (location % columns == columns - 1)
@@ -254,21 +318,20 @@ public final class Coordinate implements Comparable<Coordinate> {
         return printout.toString();
     }
 
+
+
     /**
      * Create a printout of the map, translating the value to a character with
      * the given function, using '.' for empty spaces.
      * 
-     * @param <V>
-     *     The type of the value in the given map.
+     * @param <V> The type of the value in the given map.
      * 
-     * @param rows
-     *     The number of rows in the map.
-     * @param columns
-     *     The number of columns in the map.
-     * @param coordinates
-     *     The map of coordinates to display the corresponding character.
-     * @param The
-     *     function to map the given value type to a character.
+     * @param rows The number of rows in the map.
+     * @param columns The number of columns in the map.
+     * @param coordinates The map of coordinates to display the corresponding
+     *            character. The coordinate range is expected to start at 1 and
+     *            increase.
+     * @param The function to map the given value type to a character.
      * 
      * @return A string representation of the map.
      */
@@ -277,21 +340,22 @@ public final class Coordinate implements Comparable<Coordinate> {
         return printMap(1, 1, rows, columns, coordinates, characterMapper);
     }
 
+
+
     /**
      * Create a printout of the map, translating the value to a character with
      * the given function, using '.' for empty spaces.
      * 
-     * @param <V>
-     *     The type of the value in the given map.
+     * @param <V> The type of the value in the given map.
      * 
-     * @param rows
-     *     The number of rows in the map.
-     * @param columns
-     *     The number of columns in the map.
-     * @param coordinates
-     *     The map of coordinates to display the corresponding character.
-     * @param The
-     *     function to map the given value type to a character.
+     * @param minRow The lowest numbered row in the map.
+     * @param minColumn The lowest numbered column in the map.
+     * @param maxRow The highest numbered row in the map.
+     * @param maxColumn The highest numbered column in the map.
+     * @param coordinates The map of coordinates to display the corresponding
+     *            character. The coordinate range is expected to start at
+     *            {@code minRow}/{@code minColumn} and increase.
+     * @param The function to map the given value type to a character.
      * 
      * @return A string representation of the map.
      */
@@ -301,21 +365,22 @@ public final class Coordinate implements Comparable<Coordinate> {
         return printMap(minRow, minColumn, maxRow, maxColumn, coordinates, characterMapper, '.');
     }
 
+
+
     /**
      * Create a printout of the map, translating the value to a character with
      * the given function, using '.' for empty spaces.
      * 
-     * @param <V>
-     *     The type of the value in the given map.
+     * @param <V> The type of the value in the given map.
      * 
-     * @param rows
-     *     The number of rows in the map.
-     * @param columns
-     *     The number of columns in the map.
-     * @param coordinates
-     *     The map of coordinates to display the corresponding character.
-     * @param The
-     *     function to map the given value type to a character.
+     * @param minRow The lowest numbered row in the map.
+     * @param minColumn The lowest numbered column in the map.
+     * @param maxRow The highest numbered row in the map.
+     * @param maxColumn The highest numbered column in the map.
+     * @param coordinates The map of coordinates to display the corresponding
+     *            character. The coordinate range is expected to start at
+     *            {@code minRow}/{@code minColumn} and increase.
+     * @param The function to map the given value type to a character.
      * 
      * @return A string representation of the map.
      */
@@ -338,15 +403,16 @@ public final class Coordinate implements Comparable<Coordinate> {
         return printout.toString();
     }
 
+
+
     /**
      * Create a printout of the map, using '.' for empty spaces.
      * 
-     * @param rows
-     *     The number of rows in the map.
-     * @param columns
-     *     The number of columns in the map.
-     * @param coordinates
-     *     The map of coordinates to display the corresponding character.
+     * @param rows The number of rows in the map.
+     * @param columns The number of columns in the map.
+     * @param coordinates The map of coordinates to display the corresponding
+     *            character. The coordinate range is expected to start at 1 and
+     *            increase.
      * 
      * @return A string representation of the map.
      */
@@ -368,16 +434,16 @@ public final class Coordinate implements Comparable<Coordinate> {
         return printout.toString();
     }
 
+
+
     /**
      * Create a printout of the map, using '#' as the marker and '.' for empty
      * spaces.
      * 
-     * @param rows
-     *     The number of rows in the map.
-     * @param columns
-     *     The number of columns in the map.
-     * @param coordinates
-     *     The set of coordinates to display.
+     * @param rows The number of rows in the map.
+     * @param columns The number of columns in the map.
+     * @param coordinates The set of coordinates to display. The coordinate
+     *            range is expected to start at 1 and increase.
      * 
      * @return A string representation of the map.
      */
@@ -385,16 +451,19 @@ public final class Coordinate implements Comparable<Coordinate> {
         return printMap(rows, columns, coordinates, '#');
     }
 
+
+
     /**
      * Create a printout of the map, using '#' as the marker and '.' for empty
      * spaces.
      * 
-     * @param maxRow
-     *     The number of rows in the map.
-     * @param maxColumn
-     *     The number of columns in the map.
-     * @param coordinates
-     *     The set of coordinates to display.
+     * @param minRow The lowest numbered row in the map.
+     * @param minColumn The lowest numbered column in the map.
+     * @param maxRow The highest numbered row in the map.
+     * @param maxColumn The highest numbered column in the map.
+     * @param coordinates The set of coordinates to display. The coordinate
+     *            range is expected to start at {@code minRow}/{@code minColumn}
+     *            and increase.
      * 
      * @return A string representation of the map.
      */
@@ -402,17 +471,16 @@ public final class Coordinate implements Comparable<Coordinate> {
         return printMap(minRow, minColumn, maxRow, maxColumn, coordinates, '#');
     }
 
+
+
     /**
      * Create a printout of the map.
      * 
-     * @param rows
-     *     The number of rows in the map.
-     * @param columns
-     *     The number of columns in the map.
-     * @param coordinates
-     *     The set of coordinates to display.
-     * @param presentMarker
-     *     The character to print at the given coordinates.
+     * @param rows The number of rows in the map.
+     * @param columns The number of columns in the map.
+     * @param coordinates The set of coordinates to display. The coordinate
+     *            range is expected to start at 1 and increase.
+     * @param presentMarker The character to print at the given coordinates.
      * 
      * @return A string representation of the map.
      */
@@ -420,17 +488,19 @@ public final class Coordinate implements Comparable<Coordinate> {
         return printMap(1, 1, rows, columns, coordinates, presentMarker);
     }
 
+
+
     /**
      * Create a printout of the map.
      * 
-     * @param maxRow
-     *     The number of rows in the map.
-     * @param maxColumn
-     *     The number of columns in the map.
-     * @param coordinates
-     *     The set of coordinates to display.
-     * @param presentMarker
-     *     The character to print at the given coordinates.
+     * @param minRow The lowest numbered row in the map.
+     * @param minColumn The lowest numbered column in the map.
+     * @param maxRow The highest numbered row in the map.
+     * @param maxColumn The highest numbered column in the map.
+     * @param coordinates The set of coordinates to display. The coordinate
+     *            range is expected to start at {@code minRow}/{@code minColumn}
+     *            and increase.
+     * @param presentMarker The character to print at the given coordinates.
      * 
      * @return A string representation of the map.
      */
@@ -450,23 +520,21 @@ public final class Coordinate implements Comparable<Coordinate> {
         return printout.toString();
     }
 
+
+
     /**
      * Create a printout of the map.
      * 
-     * @param rows
-     *     The number of rows in the map.
-     * @param columns
-     *     The number of columns in the map.
-     * @param firstCoordinates
-     *     The first set of coordinates to display.
-     * @param firstMarker
-     *     The character to print at the given coordinates in the first
-     *     set.
-     * @param secondCoordinates
-     *     The second set of coordinates to display.
-     * @param secondMarker
-     *     The character to print at the given coordinates in the second
-     *     set.
+     * @param rows The number of rows in the map.
+     * @param columns The number of columns in the map.
+     * @param firstCoordinates The first set of coordinates to display. The
+     *            coordinate range is expected to start at 1 and increase.
+     * @param firstMarker The character to print at the given coordinates in the
+     *            first set.
+     * @param secondCoordinates The second set of coordinates to display. The
+     *            coordinate range is expected to start at 1 and increase.
+     * @param secondMarker The character to print at the given coordinates in
+     *            the second set.
      * @return A string representation of the map.
      */
     public static String printMap(int rows, int columns,
