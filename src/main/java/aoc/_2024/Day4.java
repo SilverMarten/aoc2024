@@ -39,8 +39,18 @@ public class Day4 {
         // Read the test file
         List<String> testLines = FileUtils.readFile(TEST_INPUT_TXT);
 
+        // Map the characters
+        final var testMap = Coordinate.mapCoordinates(testLines);
+        var rows = testLines.size();
+        var columns = testLines.getFirst().length();
+
+        log.atDebug()
+           .setMessage("Parsed map:\n{}")
+           .addArgument(() -> Coordinate.printMap(rows, columns, testMap))
+           .log();
+
         var expectedTestResult = 18;
-        var testResult = part1(testLines);
+        var testResult = part1(testMap);
 
         log.info("Should be {}", expectedTestResult);
         log.info(resultMessage, testResult);
@@ -52,17 +62,20 @@ public class Day4 {
 
         // Read the real file
         List<String> lines = FileUtils.readFile(INPUT_TXT);
+        // Map the characters
 
-        log.info(resultMessage, part1(lines));
+        final var map = Coordinate.mapCoordinates(lines);
+
+        log.info(resultMessage, part1(map));
 
         // PART 2
-        resultMessage = "{}";
+        resultMessage = "X-MAS occurs a total of {} times.";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
-        testResult = part2(testLines);
+        expectedTestResult = 9;
+        testResult = part2(testMap);
 
         log.info("Should be {}", expectedTestResult);
         log.info(resultMessage, testResult);
@@ -72,7 +85,7 @@ public class Day4 {
 
         log.setLevel(Level.INFO);
 
-        log.info(resultMessage, part2(lines));
+        log.info(resultMessage, part2(map));
     }
 
 
@@ -81,22 +94,10 @@ public class Day4 {
      * Take a look at the little Elf's word search. How many times does XMAS
      * appear?
      * 
-     * @param lines The lines read from the input.
+     * @param map The mapped characters from the input.
      * @return The value calculated for part 1.
      */
-    private static long part1(final List<String> lines) {
-
-        // Map the characters
-
-        final var map = Coordinate.mapCoordinates(lines);
-        var rows = lines.size();
-        var columns = lines.getFirst().length();
-
-        log.atDebug()
-           .setMessage("Parsed map:\n{}")
-           //           .addArgument(() -> Coordinate.printMap(x.get(), y.get(), map, letter -> letter.name().charAt(0)))
-           .addArgument(() -> Coordinate.printMap(rows, columns, map))
-           .log();
+    private static long part1(final Map<Coordinate, Character> map) {
 
         // For each 'X' check the lines around it for the subsequent letters "MAS" and count matches
         return map.entrySet()
@@ -127,13 +128,36 @@ public class Day4 {
 
 
     /**
+     * Flip the word search from the instructions back over to the word search
+     * side and try again. How many times does an X-MAS appear?
      * 
-     * @param lines The lines read from the input.
+     * @param map The mapped characters from the input.
      * @return The value calculated for part 2.
      */
-    private static int part2(final List<String> lines) {
+    private static long part2(final Map<Coordinate, Character> map) {
 
-        return -1;
+        // For each 'A' check the lines around it for the subsequent letters "M" and "S" and count matches
+        return map.entrySet()
+                  .stream()
+                  .filter(e -> e.getValue().equals('A'))
+                  .filter(e -> isXMas(e.getKey(), map))
+                  .count();
+    }
+
+
+
+    /**
+     * Check each direction to see if the correct letters are present.
+     * 
+     * @param fromA The {@link Coordinate} from which to start.
+     * @param map The map of characters, indexed by coordinate.
+     * @return Whether there is an X-MAS at the given coordinate or not.
+     */
+    private static boolean isXMas(Coordinate fromA, Map<Coordinate, Character> map) {
+        return Stream.of(Direction.UP_RIGHT, Direction.RIGHT_DOWN, Direction.DOWN_LEFT, Direction.LEFT_UP)
+                     .filter(d -> map.getOrDefault(fromA.translate(d, 1), ' ').equals('M') &&
+                                  map.getOrDefault(fromA.translate(d.opposite(), 1), ' ').equals('S'))
+                     .count() == 2;
     }
 
 }
