@@ -1,7 +1,9 @@
 package aoc._2024;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -127,9 +129,17 @@ public class Day5 {
 
 
 
+    /**
+     * Determine if the pages are in order. The pages are in order if none of
+     * the pages which come before it are in the "after" list of the ordering
+     * rules.
+     * 
+     * @param pages The list of pages.
+     * @param orderingRules The rules describing which pages must come after the
+     *            indexed pages.
+     * @return {@code true} if the pages are already in order.
+     */
     private static boolean pagesInOrder(List<Integer> pages, Map<Integer, List<Integer>> orderingRules) {
-        // The pages are in order if none of the pages which come before it 
-        // are in the "after" list of the ordering rules.
 
         return IntStream.range(0, pages.size())
                         .allMatch(i -> !CollectionUtils.containsAny(orderingRules.getOrDefault(pages.get(i),
@@ -140,13 +150,45 @@ public class Day5 {
 
 
     /**
+     * Find the updates which are not in the correct order. What do you get if
+     * you add up the middle page numbers after correctly ordering just those
+     * updates?
      * 
-     * @param lines The lines read from the input.
-     * @return The value calculated for part 2.
+     * @param pages The pages read from the input.
+     * @param orderingRules The map of pages and the pages which come after each
+     *            page.
+     * 
+     * @return The sum of the middle pages of the lists which are not in order,
+     *         once ordered.
      */
-    private static int part2(final List<List<Integer>> pages, Map<Integer, List<Integer>> orderingRuless) {
+    private static int part2(final List<List<Integer>> pages, Map<Integer, List<Integer>> orderingRules) {
 
-        return -1;
+        return pages.stream()
+                    .filter(p -> !pagesInOrder(p, orderingRules))
+                    .peek(p -> log.debug(p.toString()))
+                    .map(p -> sortPages(p, orderingRules))
+                    .peek(p -> log.debug(p.toString()))
+                    .mapToInt(p -> p.get(p.size() / 2))
+                    .sum();
+    }
+
+
+
+    /**
+     * Sort the list of pages based on the ordering rules.
+     * 
+     * @param pages The pages, in any order.
+     * @param orderingRules The map of pages and the pages which come after each
+     *            page.
+     * @return A new list of pages, in the correct order.
+     */
+    private static List<Integer> sortPages(List<Integer> pages, Map<Integer, List<Integer>> orderingRules) {
+        Comparator<Integer> pageOrderComparator = (x, y) -> orderingRules.getOrDefault(x, Collections.emptyList())
+                                                                         .contains(y) ? -1 : 1;
+        List<Integer> sortedPages = new ArrayList<>(pages);
+        sortedPages.sort(pageOrderComparator);
+
+        return sortedPages;
     }
 
 
