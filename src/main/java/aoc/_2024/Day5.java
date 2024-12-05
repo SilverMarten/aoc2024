@@ -41,8 +41,20 @@ public class Day5 {
         // Read the test file
         List<String> testLines = FileUtils.readFile(TEST_INPUT_TXT);
 
+        var testOrderingRules = testLines.stream()
+                                         .filter(l -> l.contains("|"))
+                                         .map(l -> new Order(Integer.valueOf(l.split("\\|")[0]), Integer.valueOf(l.split("\\|")[1])))
+                                         .collect(Collectors.groupingBy(Order::before,
+                                                                        Collectors.mapping(Order::after, Collectors.toList())));
+        var testPages = testLines.stream()
+                                 .filter(l -> l.contains(","))
+                                 .map(l -> Arrays.stream(l.split(","))
+                                                 .map(Integer::valueOf)
+                                                 .toList())
+                                 .toList();
+
         var expectedTestResult = 143;
-        var testResult = part1(testLines);
+        var testResult = part1(testPages, testOrderingRules);
 
         log.info("Should be {}", expectedTestResult);
         log.info(resultMessage, testResult);
@@ -55,16 +67,29 @@ public class Day5 {
         // Read the real file
         List<String> lines = FileUtils.readFile(INPUT_TXT);
 
-        log.info(resultMessage, part1(lines));
+        var orderingRules = lines.stream()
+                                 .filter(l -> l.contains("|"))
+                                 .map(l -> new Order(Integer.valueOf(l.split("\\|")[0]), Integer.valueOf(l.split("\\|")[1])))
+                                 .collect(Collectors.groupingBy(Order::before,
+                                                                Collectors.mapping(Order::after, Collectors.toList())));
+
+        var pages = lines.stream()
+                         .filter(l -> l.contains(","))
+                         .map(l -> Arrays.stream(l.split(","))
+                                         .map(Integer::valueOf)
+                                         .toList())
+                         .toList();
+
+        log.info(resultMessage, part1(pages, orderingRules));
 
         // PART 2
-        resultMessage = "{}";
+        //        resultMessage = "{}";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
-        testResult = part2(testLines);
+        expectedTestResult = 123;
+        testResult = part2(testPages, testOrderingRules);
 
         log.info("Should be {}", expectedTestResult);
         log.info(resultMessage, testResult);
@@ -74,7 +99,7 @@ public class Day5 {
 
         log.setLevel(Level.INFO);
 
-        log.info(resultMessage, part2(lines));
+        log.info(resultMessage, part2(pages, orderingRules));
     }
 
 
@@ -84,21 +109,15 @@ public class Day5 {
      * if you add up the middle page number from those correctly-ordered
      * updates?
      * 
-     * @param lines The lines read from the input.
-     * @return The value calculated for part 1.
+     * @param pages The pages read from the input.
+     * @param orderingRules The map of pages and the pages which come after each
+     *            page.
+     * 
+     * @return The sum of the middle pages of the lists which are in order.
      */
-    private static long part1(final List<String> lines) {
-        var orderingRules = lines.stream()
-                                 .filter(l -> l.contains("|"))
-                                 .map(l -> new Order(Integer.valueOf(l.split("\\|")[0]), Integer.valueOf(l.split("\\|")[1])))
-                                 .collect(Collectors.groupingBy(Order::before,
-                                                                Collectors.mapping(Order::after, Collectors.toList())));
+    private static long part1(final List<List<Integer>> pages, Map<Integer, List<Integer>> orderingRules) {
 
-        return lines.stream()
-                    .filter(l -> l.contains(","))
-                    .map(l -> Arrays.stream(l.split(","))
-                                    .map(Integer::valueOf)
-                                    .toList())
+        return pages.stream()
                     .filter(p -> pagesInOrder(p, orderingRules))
                     .peek(p -> log.debug(p.toString()))
                     .mapToInt(p -> p.get(p.size() / 2))
@@ -125,7 +144,7 @@ public class Day5 {
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
-    private static int part2(final List<String> lines) {
+    private static int part2(final List<List<Integer>> pages, Map<Integer, List<Integer>> orderingRuless) {
 
         return -1;
     }
