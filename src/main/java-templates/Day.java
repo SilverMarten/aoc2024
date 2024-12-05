@@ -73,7 +73,7 @@ public class Day${day} {
      * @param lines The lines read from the input.
      * @return The value calculated for part 1.
      */
-    private static int part1(final List<String> lines) {
+    private static long part1(final List<String> lines) {
 
         return -1;
     }
@@ -83,7 +83,7 @@ public class Day${day} {
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
-    private static int part2(final List<String> lines) {
+    private static long part2(final List<String> lines) {
 
         return -1;
     }
