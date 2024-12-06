@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 
 public enum Direction {
 
+    // The order of the enumerations is representative of their order going clockwise.
     RIGHT('>', 'R', Coordinate.of(0, 1)),
     RIGHT_DOWN('↘', 'C', Coordinate.of(1, 1)),
     DOWN('v', 'D', Coordinate.of(1, 0)),
@@ -72,8 +73,54 @@ public enum Direction {
 
 
 
+    /**
+     * @return The opposite to the current direction. Up becomes down, down left
+     *         becomes up right, etc.
+     */
     public Direction opposite() {
         return oppositeOf(this);
+    }
+
+
+
+    /**
+     * @return The next direction to the right (clockwise).
+     */
+    public Direction rotateRight() {
+        return Direction.values()[(this.ordinal() + 1) % Direction.values().length];
+    }
+
+
+
+    /**
+     * @param degrees The number of degrees to rotate.
+     * @return The next direction to the right (clockwise), based on the number
+     *         of degrees.
+     */
+    public Direction rotateRight(int degrees) {
+        var steps = (degrees / 360.) * Direction.values().length;
+        return Direction.values()[(this.ordinal() + (int) steps) % Direction.values().length];
+    }
+
+
+
+    /**
+     * @return The next direction to the left (anti-clockwise).
+     */
+    public Direction rotateLeft() {
+        return Direction.values()[(this.ordinal() + 9) % Direction.values().length];
+    }
+
+
+
+    /**
+     * @param degrees The number of degrees to rotate.
+     * @return The next direction to the left (anti-clockwise), based on the
+     *         number of degrees.
+     */
+    public Direction rotateLeft(int degrees) {
+        var steps = (degrees / 360.) * Direction.values().length;
+        return Direction.values()[(this.ordinal() + 10 - (int) steps) % Direction.values().length];
     }
 
 
