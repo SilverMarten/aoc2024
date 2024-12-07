@@ -59,7 +59,7 @@ public class Day7 {
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
+        expectedTestResult = 11_387;
         testResult = part2(testLines);
 
         log.info("Should be {}", expectedTestResult);
@@ -74,7 +74,8 @@ public class Day7 {
     }
 
     /**
-     * Determine which equations could possibly be true. What is their total calibration result?
+     * Determine which equations could possibly be true.
+     * What is their total calibration result?
      * 
      * @param lines The lines read from the input.
      * @return The value calculated for part 1.
@@ -87,20 +88,20 @@ public class Day7 {
                                        Arrays.stream(p[1].split(" "))
                                              .map(Long::valueOf)
                                              .toList()))
-                    .filter(Day7::linePossiblyTrue)
+                    .filter(Day7::linePossiblyTruePart1)
                     .mapToLong(Line::total)
                     .sum();
 
     }
 
     /**
-     * Given the values for a line, determine if there's a combination of addition or multiplication that would result
-     * in its total.
+     * Given the values for a line, determine if there's a combination of
+     * addition or multiplication that would result in its total.
      * 
      * @param line The {@link Line} describing the target total and the numbers to work with.
      * @return {@code true} if there's a combination that results in the target total, {@code false} otherwise.
      */
-    private static boolean linePossiblyTrue(final Line line) {
+    private static boolean linePossiblyTruePart1(final Line line) {
 
         Set<Long> totals = new HashSet<>();
 
@@ -123,13 +124,54 @@ public class Day7 {
     }
 
     /**
+     * Using your new knowledge of elephant hiding spots, determine
+     * which equations could possibly be true.
+     * What is their total calibration result?
      * 
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
     private static long part2(final List<String> lines) {
 
-        return -1;
+        return lines.stream()
+                    .map(line -> line.split(": "))
+                    .map(p -> new Line(Long.parseLong(p[0]),
+                                       Arrays.stream(p[1].split(" "))
+                                             .map(Long::valueOf)
+                                             .toList()))
+                    .filter(Day7::linePossiblyTruePart2)
+                    .mapToLong(Line::total)
+                    .sum();
+    }
+
+    /**
+     * Given the values for a line, determine if there's a combination of
+     * addition, multiplication, or concatenation that would result in its total.
+     * 
+     * @param line The {@link Line} describing the target total and the numbers to work with.
+     * @return {@code true} if there's a combination that results in the target total, {@code false} otherwise.
+     */
+    private static boolean linePossiblyTruePart2(final Line line) {
+
+        Set<Long> totals = new HashSet<>();
+
+        var numbers = line.numbers().iterator();
+        totals.add(numbers.next());
+
+        while (numbers.hasNext() && !totals.isEmpty()) {
+            var next = numbers.next();
+            // Compute the next set of numbers, filtering out any greater than the target total
+            var newTotals = totals.stream()
+                                  .flatMap(n -> Stream.of(n + next, n * next,
+                                                          Long.valueOf(n.toString() + next.toString())))
+                                  .filter(n -> n <= line.total())
+                                  .toList();
+
+            totals.clear();
+            totals.addAll(newTotals);
+        }
+
+        return totals.contains(line.total());
     }
 
     record Line(long total, List<Long> numbers) {
