@@ -9,13 +9,13 @@ public enum Direction {
 
     // The order of the enumerations is representative of their order going clockwise.
     RIGHT('>', 'R', Coordinate.of(0, 1)),
-    RIGHT_DOWN('↘', 'C', Coordinate.of(1, 1)),
+    RIGHT_DOWN('\u2198', 'C', Coordinate.of(1, 1)),
     DOWN('v', 'D', Coordinate.of(1, 0)),
-    DOWN_LEFT('↙', 'Z', Coordinate.of(1, -1)),
+    DOWN_LEFT('\u2199', 'Z', Coordinate.of(1, -1)),
     LEFT('<', 'L', Coordinate.of(0, -1)),
-    LEFT_UP('↖', 'Q', Coordinate.of(-1, -1)),
+    LEFT_UP('\u2196', 'Q', Coordinate.of(-1, -1)),
     UP('^', 'U', Coordinate.of(-1, 0)),
-    UP_RIGHT('↗', 'E', Coordinate.of(-1, 1)),
+    UP_RIGHT('\u2197', 'E', Coordinate.of(-1, 1)),
     ;
 
 
