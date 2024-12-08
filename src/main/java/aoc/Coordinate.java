@@ -1,6 +1,7 @@
 package aoc;
 
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -561,5 +562,24 @@ public final class Coordinate implements Comparable<Coordinate> {
         }
 
         return printout.toString();
+    }
+
+    /**
+     * Find the distinct combinations of pairs of {@link Coordinate}s in the given collection.
+     * 
+     * @param values The collection of values to pair up.
+     * @return The set of pairs of combinations of the given coordinates.
+     * 
+     * @see https://stackoverflow.com/questions/59354514/generalized-way-to-generate-combinations-in-java-8
+     */
+    public static Set<CoordinatePair> combinations(Collection<Coordinate> values) {
+        return values.stream()
+                     .flatMap(v -> values.stream()
+                                         .filter(v2 -> v != v2)
+                                         .map(v2 -> new CoordinatePair(v, v2)))
+                     .collect(Collectors.toSet());
+    }
+
+    public record CoordinatePair(Coordinate c1, Coordinate c2) {
     }
 }
