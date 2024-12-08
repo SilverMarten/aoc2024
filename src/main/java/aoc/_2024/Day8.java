@@ -63,7 +63,7 @@ public class Day8 {
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
+        expectedTestResult = 34;
         testResult = part2(testLines);
 
         log.info("Should be {}", expectedTestResult);
@@ -143,13 +143,95 @@ public class Day8 {
     }
 
     /**
+     * Calculate the impact of the signal using this updated model.
+     * How many unique locations within the bounds of the map contain an antinode?
      * 
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
     private static long part2(final List<String> lines) {
 
-        return -1;
+        var antennaMap = Coordinate.mapCoordinates(lines)
+                                   .entrySet()
+                                   .stream()
+                                   .collect(Collectors.groupingBy(Entry::getValue,
+                                                                  Collectors.mapping(Entry::getKey,
+                                                                                     Collectors.toList())));
+
+        var rowRange = Range.of(1, lines.size());
+        var columnRange = Range.of(1, lines.getFirst().length());
+
+        Set<Coordinate> antinodes = antennaMap.entrySet()
+                                              .stream()
+                                              .map(e -> findAntinodes2(e.getValue(), rowRange, columnRange))
+                                              .flatMap(Collection::stream)
+                                              .filter(c -> rowRange.contains(c.getRow())
+                                                           && columnRange.contains(c.getColumn()))
+                                              .collect(Collectors.toSet());
+
+        return antinodes.size();
     }
 
+    /**
+     * Find all the antinodes of the given collection of antennae within the given range.
+     * 
+     * @param antennae The collection of antennae to find all the antinodes of.
+     * @param rowRange The range of row values to search within.
+     * @param columnRange The range of column values to search within.
+     * @return All the antinodes of the given collection of antennae within the given range.
+     */
+    private static Set<Coordinate> findAntinodes2(List<Coordinate> antennae,
+                                                  Range<Integer> rowRange,
+                                                  Range<Integer> columnRange) {
+
+        return Coordinate.combinations(antennae)
+                         .stream()
+                         .peek(p -> log.debug("Antennae {}, {}", p.c1(), p.c2()))
+                         .map(p -> findAntinodes2(p, rowRange, columnRange))
+                         .peek(c -> log.debug("Antinodes {}", c))
+                         .flatMap(Collection::stream)
+                         .collect(Collectors.toSet());
+
+    }
+
+    /**
+     * Find all the antinodes of the given coordinate pair within the given range.
+     * 
+     * @param antennae The pair of antennae to find the antinodes of.
+     * @return The all antinodes of the given coordinate pair within the given range.
+     */
+    private static Set<Coordinate> findAntinodes2(CoordinatePair antennae,
+                                                  Range<Integer> rowRange,
+                                                  Range<Integer> columnRange) {
+        Set<Coordinate> antinodes = new HashSet<>();
+        boolean eitherInRange = true;
+        int i = 1;
+        while (eitherInRange) {
+
+            Coordinate antinode1 = antennae.c1()
+                                           .translate(Coordinate.of(-i * (antennae.c1().getRow()
+                                                                          - antennae.c2().getRow()),
+                                                                    -i * (antennae.c1().getColumn()
+                                                                          - antennae.c2().getColumn())));
+            boolean antinode1InRange = rowRange.contains(antinode1.getRow())
+                                       && columnRange.contains(antinode1.getColumn());
+            if (antinode1InRange)
+                antinodes.add(antinode1);
+
+            Coordinate antinode2 = antennae.c2()
+                                           .translate(Coordinate.of(-i * (antennae.c2().getRow()
+                                                                          - antennae.c1().getRow()),
+                                                                    -i * (antennae.c2().getColumn()
+                                                                          - antennae.c1().getColumn())));
+            boolean antinode2InRange = rowRange.contains(antinode2.getRow())
+                                       && columnRange.contains(antinode2.getColumn());
+            if (antinode2InRange)
+                antinodes.add(antinode2);
+
+            eitherInRange = antinode1InRange || antinode2InRange;
+            i++;
+        }
+
+        return antinodes;
+    }
 }
