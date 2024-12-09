@@ -1,10 +1,16 @@
 package aoc._2024;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.LoggerFactory;
 
 import aoc.FileUtils;
@@ -60,7 +66,7 @@ public class Day9 {
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
+        expectedTestResult = 2858;
         testResult = part2(testLines.getFirst());
 
         log.info("Should be {}", expectedTestResult);
@@ -120,13 +126,88 @@ public class Day9 {
 
 
     /**
+     * Start over, now compacting the amphipod's hard drive using this new
+     * method instead. What is the resulting filesystem checksum?
      * 
      * @param line The line read from the input.
      * @return The value calculated for part 2.
      */
     private static long part2(final String line) {
 
-        return -1;
+        final AtomicInteger inputIndex = new AtomicInteger(0);
+        final AtomicInteger memoryIndex = new AtomicInteger(0);
+
+        // Sort the input into free spaces and memory contents
+        final List<File> memory = line.chars()
+                                      .map(c -> c - '0')
+                                      .mapToObj(m -> new File(inputIndex.get() / 2,
+                                                              m,
+                                                              memoryIndex.getAndIncrement(),
+                                                              inputIndex.getAndIncrement() % 2 == 1))
+                                      .toList();
+
+        var memoryCopy = new LinkedList<>(memory);
+        Supplier<Object> memoryToString = () -> memoryCopy.stream()
+                                                          .flatMap(File::bytes)
+                                                          .map(b -> b == null ? "." : "" + (char) (b.intValue() + '0'))
+                                                          .collect(Collectors.joining());
+        log.atDebug()
+           .setMessage("Starting memory: {}")
+           .addArgument(memoryToString)
+           .log();
+        
+        // Fill the free spaces with the end of the memory content
+        memory.reversed()
+              .stream()
+              .filter(Predicate.not(File::isEmpty))
+              .forEach(file -> {
+                  // Find the first empty space big enough, up to the index of the file
+                  var fileIndex = memoryCopy.indexOf(file);
+                  memoryCopy.subList(0, fileIndex)
+                            .stream()
+                            .filter(e -> e.isEmpty() && e.size() >= file.size())
+                            .findFirst()
+                            .ifPresent(empty -> {
+                                // Swap it for the file
+                                var emptyIndex = memoryCopy.indexOf(empty);
+                                // Add the empty space
+                                memoryCopy.add(fileIndex, new File(file.id(), file.size(), emptyIndex, true));
+                                // Remove the file
+                                memoryCopy.remove(fileIndex + 1);
+                                // Move the file to the old empty space 
+                                memoryCopy.add(emptyIndex, new File(file.id(), file.size(), emptyIndex, false));
+                                // remove the old empty space
+                                memoryCopy.remove(emptyIndex + 1);
+                                // Pad the empty space if needed
+                                if (empty.size() > file.size())
+                                    memoryCopy.add(emptyIndex + 1,
+                                                   new File(0, empty.size() - file.size(), emptyIndex + 1, true));
+                            });
+
+                  log.atDebug()
+                     .setMessage("Defragmenting memory: {}")
+                     .addArgument(memoryToString)
+                     .log();
+              });
+
+        log.atDebug()
+           .setMessage("Defragmented memory: {}")
+           .addArgument(memoryToString)
+           .log();
+
+        memoryIndex.set(0);
+        return memoryCopy.stream()
+                         .flatMap(File::bytes)
+                         .mapToLong(m -> ObjectUtils.defaultIfNull(m, 0) * memoryIndex.getAndIncrement())
+                         .sum();
     }
 
+
+
+    private record File(int id, int size, int position, boolean isEmpty) {
+
+        public Stream<Integer> bytes() {
+            return IntStream.range(0, size).mapToObj(i -> isEmpty ? null : id);
+        }
+    }
 }
