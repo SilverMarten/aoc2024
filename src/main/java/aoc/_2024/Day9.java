@@ -95,7 +95,7 @@ public class Day9 {
         line.chars()
             .map(c -> c - '0')
             .forEach(m -> {
-                if (index.get() % 2 == 0) {
+                if ((index.get() & 1) == 0) {
                     IntStream.range(0, m).forEach(x -> memory.add(index.get() / 2));
                 } else {
                     IntStream.range(0, m).forEach(x -> freeSpaces.add(memory.size() + freeSpaces.size()));
@@ -115,7 +115,7 @@ public class Day9 {
         log.debug("Defragmented memory: {}", memory);
 
         index.set(0);
-        return memory.stream().mapToLong(m -> m * index.getAndIncrement()).sum();
+        return memory.stream().mapToLong(m -> m.longValue() * index.getAndIncrement()).sum();
 
     }
 
@@ -136,7 +136,7 @@ public class Day9 {
                                       .map(c -> c - '0')
                                       .mapToObj(m -> new File(inputIndex.get() / 2,
                                                               m,
-                                                              inputIndex.getAndIncrement() % 2 == 1))
+                                                              (inputIndex.getAndIncrement() & 1) == 1))
                                       .toList();
 
         var memoryCopy = new LinkedList<>(memory);
