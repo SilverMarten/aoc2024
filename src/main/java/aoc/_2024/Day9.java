@@ -32,8 +32,6 @@ public class Day9 {
 
     private static final String TEST_INPUT_TXT = "testInput/Day9.txt";
 
-
-
     public static void main(String[] args) {
 
         var resultMessage = "The filesystem checksum is {}";
@@ -80,8 +78,6 @@ public class Day9 {
         log.info(resultMessage, part2(lines.getFirst()));
     }
 
-
-
     /**
      * Compact the amphipod's hard drive using the process he requested. What is
      * the resulting filesystem checksum?
@@ -123,8 +119,6 @@ public class Day9 {
 
     }
 
-
-
     /**
      * Start over, now compacting the amphipod's hard drive using this new
      * method instead. What is the resulting filesystem checksum?
@@ -142,7 +136,6 @@ public class Day9 {
                                       .map(c -> c - '0')
                                       .mapToObj(m -> new File(inputIndex.get() / 2,
                                                               m,
-                                                              memoryIndex.getAndIncrement(),
                                                               inputIndex.getAndIncrement() % 2 == 1))
                                       .toList();
 
@@ -155,7 +148,7 @@ public class Day9 {
            .setMessage("Starting memory: {}")
            .addArgument(memoryToString)
            .log();
-        
+
         // Fill the free spaces with the end of the memory content
         memory.reversed()
               .stream()
@@ -171,17 +164,17 @@ public class Day9 {
                                 // Swap it for the file
                                 var emptyIndex = memoryCopy.indexOf(empty);
                                 // Add the empty space
-                                memoryCopy.add(fileIndex, new File(file.id(), file.size(), emptyIndex, true));
+                                memoryCopy.add(fileIndex, new File(file.id(), file.size(), true));
                                 // Remove the file
                                 memoryCopy.remove(fileIndex + 1);
                                 // Move the file to the old empty space 
-                                memoryCopy.add(emptyIndex, new File(file.id(), file.size(), emptyIndex, false));
+                                memoryCopy.add(emptyIndex, new File(file.id(), file.size(), false));
                                 // remove the old empty space
                                 memoryCopy.remove(emptyIndex + 1);
                                 // Pad the empty space if needed
                                 if (empty.size() > file.size())
                                     memoryCopy.add(emptyIndex + 1,
-                                                   new File(0, empty.size() - file.size(), emptyIndex + 1, true));
+                                                   new File(0, empty.size() - file.size(), true));
                             });
 
                   log.atDebug()
@@ -202,9 +195,7 @@ public class Day9 {
                          .sum();
     }
 
-
-
-    private record File(int id, int size, int position, boolean isEmpty) {
+    private record File(int id, int size, boolean isEmpty) {
 
         public Stream<Integer> bytes() {
             return IntStream.range(0, size).mapToObj(i -> isEmpty ? null : id);
