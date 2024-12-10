@@ -63,13 +63,13 @@ public class Day10 {
         log.info(resultMessage, part1(map));
 
         // PART 2
-        resultMessage = "{}";
+        resultMessage = "The sum of the ratings of all trailheads is: {}";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
-        testResult = part2(testLines);
+        expectedTestResult = 81;
+        testResult = part2(testMap);
 
         log.info("Should be {}", expectedTestResult);
         log.info(resultMessage, testResult);
@@ -79,7 +79,7 @@ public class Day10 {
 
         log.setLevel(Level.INFO);
 
-        log.info(resultMessage, part2(lines));
+        log.info(resultMessage, part2(map));
     }
 
 
@@ -92,6 +92,28 @@ public class Day10 {
      */
     private static long part1(final Map<Coordinate, Integer> map) {
 
+        List<List<Coordinate>> trails = findTrails(map);
+
+        // Find distinct starts and ends
+        return trails.stream()
+                     .collect(Collectors.groupingBy(List::getFirst, Collectors.mapping(List::getLast, Collectors.toSet())))
+                     .values()
+                     .stream()
+                     .mapToInt(Collection::size)
+                     .sum();
+
+    }
+
+
+
+    /**
+     * Compute all trails along the map, starting from 0, where there is only an
+     * increase of 1 each orthogonal step.
+     * 
+     * @param map The topographic map.
+     * @return A list of all of the trails found on the map.
+     */
+    private static List<List<Coordinate>> findTrails(final Map<Coordinate, Integer> map) {
         List<List<Coordinate>> trails = map.entrySet()
                                            .stream()
                                            .filter(e -> e.getValue() == 0)
@@ -109,38 +131,29 @@ public class Day10 {
         IntStream.rangeClosed(1, 9).forEach(i -> {
             // Create new trails if the paths diverge
             var temp = trails.stream()
-                             .flatMap(trail -> {
-                                 return trail.getLast()
-                                             .findOrthogonalAdjacent()
-                                             .stream()
-                                             .filter(c -> map.getOrDefault(c, 0) == i)
-                                             .map(c -> ListUtils.union(trail, Arrays.asList(c)));
-                             })
+                             .flatMap(trail -> trail.getLast()
+                                                    .findOrthogonalAdjacent()
+                                                    .stream()
+                                                    .filter(c -> map.getOrDefault(c, 0) == i)
+                                                    .map(c -> ListUtils.union(trail, Arrays.asList(c))))
                              .toList();
             trails.clear();
             trails.addAll(temp);
         });
-
-        // Find distinct starts and ends
-        return trails.stream()
-                     .collect(Collectors.groupingBy(List::getFirst, Collectors.mapping(List::getLast, Collectors.toSet())))
-                     .values()
-                     .stream()
-                     .mapToInt(Collection::size)
-                     .sum();
-
+        return trails;
     }
 
 
 
     /**
+     * What is the sum of the ratings of all trailheads?
      * 
-     * @param lines The lines read from the input.
+     * @param map The map read from the input.
      * @return The value calculated for part 2.
      */
-    private static long part2(final List<String> lines) {
+    private static long part2(final Map<Coordinate, Integer> map) {
 
-        return -1;
+        return findTrails(map).size();
     }
 
 }
