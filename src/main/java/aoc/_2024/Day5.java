@@ -45,7 +45,7 @@ public class Day5 {
 
         var testOrderingRules = testLines.stream()
                                          .filter(l -> l.contains("|"))
-                                         .map(l -> new Order(Integer.valueOf(l.split("\\|")[0]), Integer.valueOf(l.split("\\|")[1])))
+                                         .map(l -> new Order(Integer.parseInt(l.split("\\|")[0]), Integer.parseInt(l.split("\\|")[1])))
                                          .collect(Collectors.groupingBy(Order::before,
                                                                         Collectors.mapping(Order::after, Collectors.toList())));
         var testPages = testLines.stream()
@@ -71,7 +71,7 @@ public class Day5 {
 
         var orderingRules = lines.stream()
                                  .filter(l -> l.contains("|"))
-                                 .map(l -> new Order(Integer.valueOf(l.split("\\|")[0]), Integer.valueOf(l.split("\\|")[1])))
+                                 .map(l -> new Order(Integer.parseInt(l.split("\\|")[0]), Integer.parseInt(l.split("\\|")[1])))
                                  .collect(Collectors.groupingBy(Order::before,
                                                                 Collectors.mapping(Order::after, Collectors.toList())));
 
