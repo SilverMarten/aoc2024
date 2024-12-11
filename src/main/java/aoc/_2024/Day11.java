@@ -1,8 +1,13 @@
 package aoc._2024;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -32,7 +37,7 @@ public class Day11 {
 
     public static void main(String[] args) {
 
-        var resultMessage = "Aave after blinking 25 times, you have {} stones.";
+        var resultMessage = "After blinking 25 times, you have {} stones.";
 
         log.info("Part 1:");
         log.setLevel(Level.DEBUG);
@@ -40,7 +45,7 @@ public class Day11 {
         // Read the test file
         List<String> testLines = FileUtils.readFile(TEST_INPUT_TXT);
 
-        var expectedTestResult = 55_312;
+        var expectedTestResult = 55_312L;
         var testResult = part1(testLines);
 
         log.info("Should be {}", expectedTestResult);
@@ -57,12 +62,13 @@ public class Day11 {
         log.info(resultMessage, part1(lines));
 
         // PART 2
-        resultMessage = "{}";
+        resultMessage = "After blinking 75 times, you have {} stones.";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
+        // There was no test result, but it was in fact 65,601,038,650,482
+        expectedTestResult = 65_601_038_650_482L;
         testResult = part2(testLines);
 
         log.info("Should be {}", expectedTestResult);
@@ -91,10 +97,8 @@ public class Day11 {
 
         log.debug("Initial arragement: {}", stones);
 
-        //        Map<Long, List<List<Long>>> blinkMap = new HashMap<>();
-
         IntStream.rangeClosed(1, 25).forEach(i -> {
-            var temp = stones.stream().map(Day11::getNextValue).flatMap(List::stream).toList();
+            var temp = stones.stream().map(Day11::getNextValues).flatMap(List::stream).toList();
             stones.clear();
             stones.addAll(temp);
 
@@ -107,7 +111,13 @@ public class Day11 {
 
 
 
-    private static List<Long> getNextValue(long stone) {
+    /**
+     * Compute the next values for a given stone.
+     * 
+     * @param stone The number on the stone.
+     * @return A list of the next values after blinking once.
+     */
+    private static List<Long> getNextValues(long stone) {
         if (stone == 0)
             return Arrays.asList(1L);
 
@@ -122,13 +132,51 @@ public class Day11 {
 
 
     /**
+     * How many stones would you have after blinking a total of 75 times?
      * 
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
     private static long part2(final List<String> lines) {
 
-        return -1;
+        var stones = Stream.of(lines.getFirst().split(" ")).map(Long::valueOf).collect(Collectors.toCollection(ArrayList::new));
+
+        log.debug("Initial arragement: {}", stones);
+
+        var blinks = 75;
+
+        // Create a map of known results (number of stones given a starting number and a number of blinks)
+        Map<Result, Long> blinkMap = new HashMap<>();
+
+        // Begin a stack of unknown results
+        Deque<Result> stack = new ArrayDeque<>();
+        stones.stream().forEach(s -> stack.push(new Result(s, blinks)));
+
+        // Find the needed results
+        while (!stack.isEmpty()) {
+            var result = stack.pop();
+
+            List<Result> nextValues = getNextValues(result.stone()).stream().map(s -> new Result(s, result.blinks() - 1)).toList();
+
+            if (result.blinks() == 1) {
+                // If it's the terminal blink, compute it
+                blinkMap.put(result, (long) nextValues.size());
+            } else if (nextValues.stream().allMatch(blinkMap::containsKey)) {
+                // If we have the number of stones for the next value(s) 
+                blinkMap.put(result, nextValues.stream().mapToLong(blinkMap::get).sum());
+            } else {
+                // We don't have enough information yet, put the results back on the stack
+                stack.push(result);
+                nextValues.stream().filter(Predicate.not(blinkMap::containsKey)).forEach(stack::push);
+            }
+        }
+
+        // The map should now contain the initially required results
+        return stones.stream().mapToLong(s -> blinkMap.get(new Result(s, blinks))).sum();
     }
 
+
+
+    private record Result(long stone, long blinks) {
+    }
 }
