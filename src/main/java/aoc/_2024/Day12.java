@@ -1,5 +1,9 @@
 package aoc._2024;
 
+import static aoc.Direction.DOWN;
+import static aoc.Direction.LEFT;
+import static aoc.Direction.RIGHT;
+import static aoc.Direction.UP;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -16,6 +20,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +57,8 @@ public class Day12 {
         // Read the test file
         List<String> testLines = FileUtils.readFile(TEST_INPUT_TXT);
         var testMap = Coordinate.mapCoordinates(testLines);
+        var testRows = testLines.size();
+        var testColumns = testLines.getFirst().length();
 
         var expectedTestResult = 1930;
         var testResult = part1(testMap);
@@ -66,17 +74,19 @@ public class Day12 {
         // Read the real file
         List<String> lines = FileUtils.readFile(INPUT_TXT);
         var map = Coordinate.mapCoordinates(lines);
+        var rows = lines.size();
+        var columns = lines.getFirst().length();
 
         log.info(resultMessage, part1(map));
 
         // PART 2
-        resultMessage = "{}";
+        //        resultMessage = "{}";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
-        testResult = part2(testLines);
+        expectedTestResult = 1206;
+        testResult = part2(testMap, testRows, testColumns);
 
         log.info("Should be {}", expectedTestResult);
         log.info(resultMessage, testResult);
@@ -86,7 +96,7 @@ public class Day12 {
 
         log.setLevel(Level.INFO);
 
-        log.info(resultMessage, part2(lines));
+        log.info(resultMessage, part2(map, rows, columns));
     }
 
 
@@ -126,38 +136,9 @@ public class Day12 {
             }
         });
 
-        /*Map<Region, List<Coordinate>> regionMap = new HashMap<>();
-        map.forEach((c, p) -> {
-            var existingRegions = regionMap.entrySet()
-                                           .stream()
-                                           .filter(e -> e.getKey().plantType() == p)
-                                           .toList();
-            AtomicBoolean foundRegion = new AtomicBoolean(false);
-            existingRegions.forEach(e -> {
-                if (CollectionUtils.containsAny(c.findOrthogonalAdjacent(), e.getValue())) {
-                    e.getValue().add(c);
-                    foundRegion.set(true);
-                }
-            });
-            if (!foundRegion.get())
-                regionMap.compute(new Region(regionId.getAndIncrement(), p), (k, v) -> new ArrayList<>()).add(c);
-        });*/
         log.debug("Region map: {}", regionMap);
 
-        /*return map.entrySet()
-                  .stream()
-                  .collect(groupingBy(Entry::getValue,
-                                      teeing(counting(),
-                                             mapping(e -> Day12.countEdges(e, map),
-                                                     summingInt(Integer::intValue)),
-                                             (a, p) -> a * p)))
-                  .entrySet()
-                  .stream()
-                  .peek(e -> log.debug("A region of {} plants with price {}.", e.getKey(), e.getValue()))
-                  .map(Entry::getValue)
-                  .mapToLong(Long::longValue)
-                  .sum();*/
-
+        // For each contiguous region, multiply the area by the perimeter.
         return regionMap.entrySet()
                         .stream()
                         .collect(groupingBy(Entry::getValue, mapping(Entry::getKey, toList())))
@@ -179,6 +160,16 @@ public class Day12 {
 
 
 
+    /**
+     * Count the number of adjacent garden plots to the garden plot at the given
+     * location with a different plant type.
+     * 
+     * @param gardenPlot The location of the garden plot to count non-matching
+     *            neighbours.
+     * @param map The map of garden plots.
+     * @return The number of orthogonally adjacent neighbours with a different
+     *         plant type.
+     */
     private static int countEdges(Coordinate gardenPlot, Map<Coordinate, Character> map) {
         var plantType = map.get(gardenPlot);
         return (int) gardenPlot.findOrthogonalAdjacent()
@@ -191,13 +182,101 @@ public class Day12 {
 
 
     /**
+     * What is the new total price of fencing all regions on your map?
      * 
-     * @param lines The lines read from the input.
+     * @param map The map read from the input.
      * @return The value calculated for part 2.
      */
-    private static long part2(final List<String> lines) {
+    private static long part2(final Map<Coordinate, Character> map, int rows, int columns) {
 
-        return -1;
+        // Group into regions
+        AtomicInteger regionId = new AtomicInteger();
+        Map<Coordinate, Region> regionMap = new HashMap<>();
+        map.forEach((c, p) -> {
+            if (!regionMap.containsKey(c)) {
+                // Map the new region
+                var region = new Region(regionId.getAndIncrement(), p);
+                regionMap.put(c, region);
+
+                // Map its neighbours
+                Deque<Coordinate> neighbours = c.findOrthogonalAdjacent()
+                                                .stream()
+                                                .filter(n -> p.equals(map.get(n)))
+                                                .filter(Predicate.not(regionMap::containsKey))
+                                                .collect(toCollection(ArrayDeque::new));
+                while (!neighbours.isEmpty()) {
+                    var neighbour = neighbours.pop();
+                    regionMap.putIfAbsent(neighbour, region);
+                    neighbour.findOrthogonalAdjacent()
+                             .stream()
+                             .filter(n -> p.equals(map.get(n)))
+                             .filter(Predicate.not(regionMap::containsKey))
+                             .forEach(neighbours::push);
+                }
+            }
+        });
+
+        // Map out the sides of the regions
+        Map<Region, Integer> sidesMap = new HashMap<>();
+
+        Stream.of(UP, DOWN)
+              .forEach(d -> {
+                  IntStream.rangeClosed(1, rows)
+                           .forEach(r -> {
+                               IntStream.rangeClosed(1, columns)
+                                        .forEach(c -> {
+                                            // Is there an edge?
+                                            var location = Coordinate.of(r, c);
+                                            var plantType = map.get(location);
+                                            var locationUpOrDown = location.translate(d, 1);
+                                            if (!plantType.equals(map.get(locationUpOrDown))) {
+                                                // Does the edge end?
+                                                var plantTypeRight = map.get(location.translate(RIGHT, 1));
+                                                if (!plantType.equals(plantTypeRight) ||
+                                                    plantTypeRight.equals(map.get(locationUpOrDown.translate(RIGHT, 1)))) {
+                                                    sidesMap.merge(regionMap.get(location), 1, Math::addExact);
+                                                }
+                                            }
+                                        });
+                           });
+              });
+        Stream.of(LEFT, RIGHT)
+              .forEach(d -> {
+                  IntStream.rangeClosed(1, columns)
+                           .forEach(r -> {
+                               IntStream.rangeClosed(1, rows)
+                                        .forEach(c -> {
+                                            // Is there an edge?
+                                            var location = Coordinate.of(r, c);
+                                            var plantType = map.get(location);
+                                            var locationLeftOrRight = location.translate(d, 1);
+                                            if (!plantType.equals(map.get(locationLeftOrRight))) {
+                                                // Does the edge end?
+                                                var plantTypeRight = map.get(location.translate(DOWN, 1));
+                                                if (!plantType.equals(plantTypeRight) ||
+                                                    plantTypeRight.equals(map.get(locationLeftOrRight.translate(DOWN, 1)))) {
+                                                    sidesMap.merge(regionMap.get(location), 1, Math::addExact);
+                                                }
+                                            }
+                                        });
+                           });
+              });
+
+        // For each contiguous region, multiply the area by the number of sides.
+        return regionMap.entrySet()
+                        .stream()
+                        .collect(groupingBy(Entry::getValue, mapping(Entry::getKey, toList())))
+                        .entrySet()
+                        .stream()
+                        .mapToLong(e -> {
+                            var area = e.getValue().size();
+                            var sides = sidesMap.getOrDefault(e.getKey(), -1);
+                            var price = area * sides;
+                            log.debug("A region of {} plants with price {} * {} = {}.", e.getKey().plantType(), area, sides, price);
+                            return price;
+                        })
+                        .sum();
+
     }
 
 
