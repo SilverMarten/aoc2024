@@ -6,10 +6,6 @@ java {
     sourceCompatibility = JavaVersion.VERSION_21
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation 'org.jgrapht:jgrapht-core:1.5.2',
                    'org.jgrapht:jgrapht-ext:1.5.2'
