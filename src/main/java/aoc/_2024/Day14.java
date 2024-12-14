@@ -1,6 +1,8 @@
 package aoc._2024;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -60,23 +62,26 @@ public class Day14 {
         log.info(resultMessage, part1(lines, rows, columns));
 
         // PART 2
-        resultMessage = "{}";
+        resultMessage = "The fewest number of seconds that must elapse for the robots to display the Easter egg is: {}";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
+        // Skip test input
+        /*
         expectedTestResult = 1_234_567_890;
-        testResult = part2(testLines);
-
+        testResult = part2(testLines, testRows, testColumns);
+        
         log.info("Should be {}", expectedTestResult);
         log.info(resultMessage, testResult);
-
+        
         if (testResult != expectedTestResult)
             log.error("The test result doesn't match the expected value.");
-
+        
         log.setLevel(Level.INFO);
+        */
 
-        log.info(resultMessage, part2(lines));
+        log.info(resultMessage, part2(lines, rows, columns));
     }
 
 
@@ -162,13 +167,85 @@ public class Day14 {
 
 
     /**
+     * What is the fewest number of seconds that must elapse for the robots to
+     * display the Easter egg?
      * 
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
-    private static long part2(final List<String> lines) {
+    private static long part2(final List<String> lines, int rows, int columns) {
 
-        return -1;
+        List<Robot> robots = lines.stream()
+                                  .map(Robot::new)
+                                  .toList();
+
+        int seconds = 0;
+        int maxSeconds = 10_000;
+        int maxNeighbours = 0;
+        int totalSeconds = 0;
+
+        // Run the robots up to a certain number of times
+        while (seconds++ < maxSeconds) {
+            Map<Coordinate, Robot> positionMap = new HashMap<>();
+
+            robots.forEach(r -> {
+                var position = r.getPosition();
+                var velocity = r.getVelocity();
+                position = position.translate(velocity);
+                position = Coordinate.of((position.getRow() % rows + rows) % rows,
+                                         (position.getColumn() % columns + columns) % columns);
+                r.setPosition(position);
+                positionMap.put(position, r);
+            });
+
+            // Count the number of neighbours
+            int numNeighbours = robots.stream()
+                                      .map(r -> r.getPosition().findAdjacent().stream().filter(positionMap::containsKey).count())
+                                      .mapToInt(Number::intValue)
+                                      .sum();
+
+            if (numNeighbours > maxNeighbours) {
+                maxNeighbours = numNeighbours;
+                totalSeconds = seconds;
+                log.atTrace()
+                   .setMessage("Robot positions after {} seconds:\n{}")
+                   .addArgument(seconds)
+                   .addArgument(() -> Coordinate.printMap(0, 0, rows - 1, columns - 1,
+                                                          robots.stream()
+                                                                .collect(Collectors.groupingBy(Robot::getPosition,
+                                                                                               Collectors.counting())),
+                                                          i -> i < 10 ? i.toString().charAt(0) : 'X'))
+                   .log();
+            }
+
+        }
+
+        log.debug("The most neighbours ({}) occurrs at {} seconds.", maxNeighbours, totalSeconds);
+
+        // Show the map at that time
+        var robots2 = lines.stream()
+                           .map(Robot::new)
+                           .toList();
+        int finalSeconds = totalSeconds;
+        robots2.forEach(r -> {
+            var position = r.getPosition();
+            var velocity = r.getVelocity();
+            position = position.translate(Coordinate.of(velocity.getRow() * finalSeconds, velocity.getColumn() * finalSeconds));
+            position = Coordinate.of((position.getRow() % rows + rows) % rows,
+                                     (position.getColumn() % columns + columns) % columns);
+            r.setPosition(position);
+        });
+
+        var positionMap = robots2.stream()
+                                 .collect(Collectors.groupingBy(Robot::getPosition,
+                                                                Collectors.counting()));
+        log.atDebug()
+           .setMessage("Robot positions:\n{}")
+           .addArgument(() -> Coordinate.printMap(0, 0, rows - 1, columns - 1, positionMap,
+                                                  i -> i < 10 ? i.toString().charAt(0) : 'X'))
+           .log();
+
+        return totalSeconds;
     }
 
 
