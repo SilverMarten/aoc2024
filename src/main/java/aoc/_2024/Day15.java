@@ -1,11 +1,19 @@
 package aoc._2024;
 
+import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.LoggerFactory;
 
 import aoc.Coordinate;
@@ -81,10 +89,10 @@ public class Day15 {
         resultMessage = "{}";
 
         log.info("Part 2:");
-        log.setLevel(Level.DEBUG);
+        log.setLevel(Level.TRACE);
 
-        expectedTestResult = 1_234_567_890;
-        testResult = part2(testLines);
+        expectedTestResult = 9021;
+        testResult = part2(testMap, testRows, testColumns, testInstructions);
 
         log.info("Should be {}", expectedTestResult);
         log.info(resultMessage, testResult);
@@ -94,7 +102,7 @@ public class Day15 {
 
         log.setLevel(Level.INFO);
 
-        log.info(resultMessage, part2(lines));
+        log.info(resultMessage, part2(map, rows, columns, instructions));
     }
 
 
@@ -173,13 +181,198 @@ public class Day15 {
 
 
     /**
+     * Predict the motion of the robot and boxes in this new, scaled-up
+     * warehouse. What is the sum of all boxes' final GPS coordinates?
      * 
-     * @param lines The lines read from the input.
+     * @param map The map read from the input.
+     * @param rows The number of rows in the map.
+     * @param columns The number of columns in the map.
+     * @param instructions The instructions to follow.
      * @return The value calculated for part 2.
      */
-    private static long part2(final List<String> lines) {
+    private static long part2(Map<Coordinate, Character> map, int rows, int columns, String instructions) {
 
-        return -1;
+        log.atDebug()
+           .setMessage("Initial state:\n{}")
+           .addArgument(Coordinate.printMap(rows, columns, map))
+           .log();
+
+        // Find the robot
+        var robot = new MovableObject(Coordinate.of(0, 0), '@');
+
+        Map<Coordinate, MovableObject> warehouse = new HashMap<>();
+
+        // Map the rest of the objects
+        map.entrySet()
+           .forEach(e -> {
+               var translatedLocation = e.getKey().translate(Direction.RIGHT, e.getKey().getColumn() - 1);
+               switch (e.getValue()) {
+                   case '@' -> {
+                       robot.setPosition(translatedLocation);
+                       warehouse.put(translatedLocation, robot);
+                   }
+                   case '#' -> {
+                       warehouse.put(translatedLocation,
+                                     MovableObject.immovableObject(translatedLocation, '#'));
+                       warehouse.put(translatedLocation.translate(Direction.RIGHT, 1),
+                                     MovableObject.immovableObject(translatedLocation.translate(Direction.RIGHT, 1), '#'));
+                   }
+                   case 'O' -> {
+                       var leftSide = new WideBox(translatedLocation, '[');
+                       var rightSide = new WideBox(translatedLocation.translate(Direction.RIGHT, 1), ']');
+                       leftSide.pair(rightSide);
+                       warehouse.put(translatedLocation, leftSide);
+                       warehouse.put(translatedLocation.translate(Direction.RIGHT, 1), rightSide);
+                   }
+                   default -> log.error("Unexpected entry: {}", e);
+               }
+           });
+
+        log.atDebug()
+           .setMessage("Wide state:\n{}")
+           .addArgument(Coordinate.printMap(rows, columns * 2, warehouse, MovableObject::getCharacter))
+           .log();
+
+        // Follow the instructions and move the robot
+        instructions.chars()
+                    .mapToObj(c -> (char) c)
+                    .map(Direction::withSymbol)
+                    .filter(Objects::nonNull)
+                    .forEach(d -> {
+                        warehouse.remove(robot.getPosition());
+                        if (robot.canMove(d, warehouse)) {
+                            robot.move(d);
+                            var neighbour = warehouse.remove(robot.getPosition());
+                            warehouse.put(robot.getPosition(), robot);
+                            if (d == Direction.LEFT || d == Direction.RIGHT) {
+                                // Move the neighbours
+                                while (neighbour != null) {
+                                    neighbour.move(d);
+                                    var nextNeighbour = warehouse.remove(neighbour.getPosition());
+                                    warehouse.put(neighbour.getPosition(), neighbour);
+                                    neighbour = nextNeighbour;
+                                }
+                            } else {
+                                Queue<MovableObject> needsToMove = new ArrayDeque<>();
+                                Set<MovableObject> hasMoved = new HashSet<>();
+                                if (neighbour != null) {
+                                    needsToMove.add(neighbour);
+                                    var otherNeighbour = ((WideBox) neighbour).getOtherSide();
+                                    needsToMove.add(otherNeighbour);
+                                    warehouse.remove(otherNeighbour.getPosition());
+                                    while (!needsToMove.isEmpty()) {
+                                        var toMove = needsToMove.poll();
+                                        if (!hasMoved.contains(toMove)) {
+                                            toMove.move(d);
+                                            var nextToMove = warehouse.remove(toMove.getPosition());
+                                            warehouse.put(toMove.getPosition(), toMove);
+
+                                            if (!(nextToMove == null || hasMoved.contains(nextToMove)))
+                                                needsToMove.add(nextToMove);
+
+                                            var otherToMove = ((WideBox) toMove).getOtherSide();
+                                            if (!(otherToMove == null || hasMoved.contains(otherToMove)))
+                                                needsToMove.add(otherToMove);
+
+                                            hasMoved.add(toMove);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+        // Final state
+        log.atDebug()
+           .setMessage("Final state:\n{}")
+           .addArgument(Coordinate.printMap(rows, columns * 2, warehouse, MovableObject::getCharacter))
+           .log();
+
+        return warehouse.entrySet()
+                        .stream()
+                        .filter(e -> e.getValue().getCharacter() == 'O')
+                        .mapToInt(e -> (e.getKey().getRow() - 1) * 100 + (e.getKey().getColumn() - 1))
+                        .sum();
     }
 
+
+
+    private static class WideBox extends MovableObject {
+
+        private WideBox otherSide;
+
+
+
+        public WideBox(Coordinate position, char character) {
+            super(position, character);
+        }
+
+
+
+        public void pair(WideBox otherSide) {
+            this.otherSide = otherSide;
+            otherSide.setOtherSide(this);
+        }
+
+
+
+        public WideBox getOtherSide() {
+            return otherSide;
+        }
+
+
+
+        public void setOtherSide(WideBox otherSide) {
+            this.otherSide = otherSide;
+        }
+
+
+
+        @Override
+        public boolean canMove(Direction direction, Map<Coordinate, MovableObject> map) {
+            // Both sides must be able to move up or down
+            if (direction == Direction.UP || direction == Direction.DOWN) {
+                var neighbour = map.get(this.getPosition().translate(direction, 1));
+                var otherNeighbour = map.get(this.getOtherSide().getPosition().translate(direction, 1));
+                log.trace("{} and {} can move {} if {} and {} can move.",
+                          this.getPosition(), this.getOtherSide().getPosition(), direction,
+                          Optional.ofNullable(neighbour).map(MovableObject::getPosition).orElse(null),
+                          Optional.ofNullable(otherNeighbour).map(MovableObject::getPosition).orElse(null));
+
+                var neighbourClear = Optional.ofNullable(neighbour).map(n -> n.canMove(direction, map)).orElse(true);
+                var otherNeighbourClear = Optional.ofNullable(otherNeighbour).map(n -> n.canMove(direction, map)).orElse(true);
+
+                return neighbourClear && otherNeighbourClear;
+                /*List<MovableObject> neighbours = Stream.of(map.get(this.getPosition().translate(direction, 1)),
+                                                           map.get(this.getOtherSide().getPosition().translate(direction, 1)))
+                                                       .filter(Objects::nonNull)
+                                                       .toList();
+                while (!neighbours.isEmpty()) {
+                    if (neighbours.stream().allMatch(n -> n.canMove(direction, map))) {
+                        neighbours = neighbours.stream()
+                                               .flatMap(n -> {
+                                                   if (n instanceof WideBox b)
+                                                       return Stream.of(map.get(b.getPosition().translate(direction, 1)),
+                                                                        map.get(b.getOtherSide().getPosition().translate(direction, 1)));
+                                                   else
+                                                       return null;
+                                               })
+                                               .filter(Objects::nonNull)
+                                               .toList();
+                    } else {
+                        return false;
+                    }
+                }
+                return true;*/
+            } else {
+                return super.canMove(direction, map);
+            }
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("%s at %s", this.getCharacter(), this.getPosition());
+        }
+
+    }
 }
