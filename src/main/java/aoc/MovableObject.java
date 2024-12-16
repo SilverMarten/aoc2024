@@ -75,14 +75,9 @@ public class MovableObject {
      *         direction.
      */
     public boolean canMove(Direction direction, Map<Coordinate, MovableObject> map) {
-        // Check all the objects in the given direction to see if they can move
         MovableObject neighbour = map.get(this.position.translate(direction, 1));
-        while (neighbour != null) {
-            if (neighbour.canMove(direction, map)) {
-                neighbour = map.get(neighbour.getPosition().translate(direction, 1));
-            } else {
-                return false;
-            }
+        if (neighbour != null) {
+            return neighbour.canMove(direction, map);
         }
         return true;
     }

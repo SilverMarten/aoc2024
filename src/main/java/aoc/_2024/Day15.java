@@ -1,7 +1,6 @@
 package aoc._2024;
 
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -10,10 +9,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.LoggerFactory;
 
 import aoc.Coordinate;
@@ -233,17 +231,19 @@ public class Day15 {
            .addArgument(Coordinate.printMap(rows, columns * 2, warehouse, MovableObject::getCharacter))
            .log();
 
+        AtomicInteger counter = new AtomicInteger();
+
         // Follow the instructions and move the robot
         instructions.chars()
                     .mapToObj(c -> (char) c)
                     .map(Direction::withSymbol)
                     .filter(Objects::nonNull)
                     .forEach(d -> {
+                        counter.incrementAndGet();
                         warehouse.remove(robot.getPosition());
                         if (robot.canMove(d, warehouse)) {
                             robot.move(d);
                             var neighbour = warehouse.remove(robot.getPosition());
-                            warehouse.put(robot.getPosition(), robot);
                             if (d == Direction.LEFT || d == Direction.RIGHT) {
                                 // Move the neighbours
                                 while (neighbour != null) {
@@ -267,12 +267,16 @@ public class Day15 {
                                             var nextToMove = warehouse.remove(toMove.getPosition());
                                             warehouse.put(toMove.getPosition(), toMove);
 
-                                            if (!(nextToMove == null || hasMoved.contains(nextToMove)))
+                                            if (!(nextToMove == null || hasMoved.contains(nextToMove) || needsToMove.contains(nextToMove)))
                                                 needsToMove.add(nextToMove);
 
                                             var otherToMove = ((WideBox) toMove).getOtherSide();
-                                            if (!(otherToMove == null || hasMoved.contains(otherToMove)))
+                                            if (!(otherToMove == null || hasMoved.contains(otherToMove) ||
+                                                  needsToMove.contains(otherToMove))) {
                                                 needsToMove.add(otherToMove);
+                                                // Make sure to remove it from the warehouse map
+                                                warehouse.remove(otherToMove.getPosition());
+                                            }
 
                                             hasMoved.add(toMove);
                                         }
@@ -280,6 +284,7 @@ public class Day15 {
                                 }
                             }
                         }
+                        warehouse.put(robot.getPosition(), robot);
                     });
 
         // Final state
@@ -290,7 +295,7 @@ public class Day15 {
 
         return warehouse.entrySet()
                         .stream()
-                        .filter(e -> e.getValue().getCharacter() == 'O')
+                        .filter(e -> e.getValue().getCharacter() == '[')
                         .mapToInt(e -> (e.getKey().getRow() - 1) * 100 + (e.getKey().getColumn() - 1))
                         .sum();
     }
@@ -343,32 +348,18 @@ public class Day15 {
                 var otherNeighbourClear = Optional.ofNullable(otherNeighbour).map(n -> n.canMove(direction, map)).orElse(true);
 
                 return neighbourClear && otherNeighbourClear;
-                /*List<MovableObject> neighbours = Stream.of(map.get(this.getPosition().translate(direction, 1)),
-                                                           map.get(this.getOtherSide().getPosition().translate(direction, 1)))
-                                                       .filter(Objects::nonNull)
-                                                       .toList();
-                while (!neighbours.isEmpty()) {
-                    if (neighbours.stream().allMatch(n -> n.canMove(direction, map))) {
-                        neighbours = neighbours.stream()
-                                               .flatMap(n -> {
-                                                   if (n instanceof WideBox b)
-                                                       return Stream.of(map.get(b.getPosition().translate(direction, 1)),
-                                                                        map.get(b.getOtherSide().getPosition().translate(direction, 1)));
-                                                   else
-                                                       return null;
-                                               })
-                                               .filter(Objects::nonNull)
-                                               .toList();
-                    } else {
-                        return false;
-                    }
-                }
-                return true;*/
             } else {
-                return super.canMove(direction, map);
+                MovableObject neighbour = map.get(this.getPosition().translate(direction, 1));
+                if (neighbour != null) {
+                    log.trace("{} can move {} if {} can move.", this.getPosition(), direction, neighbour.getPosition());
+                    return neighbour.canMove(direction, map);
+                }
+                return true;
             }
         }
-        
+
+
+
         @Override
         public String toString() {
             return String.format("%s at %s", this.getCharacter(), this.getPosition());
