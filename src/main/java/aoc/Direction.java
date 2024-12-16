@@ -1,6 +1,7 @@
 package aoc;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,6 +34,8 @@ public enum Direction {
     private static final Map<Character, Direction> letterMap = Collections.unmodifiableMap(Stream.of(Direction.values())
                                                                                                  .collect(Collectors.toMap(d -> d.letter,
                                                                                                                            d -> d)));
+
+    public static final EnumSet<Direction> ORTHOGONAL_DIRECTIONS = EnumSet.of(UP, DOWN, LEFT, RIGHT);
 
 
 
