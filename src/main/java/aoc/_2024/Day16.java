@@ -81,18 +81,27 @@ public class Day16 {
         log.info(resultMessage, part1(lines));
 
         // PART 2
-        resultMessage = "{}";
+        resultMessage = "{} tiles are part of at least one of the best paths through the maze.";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
+        expectedTestResult = 45;
         testResult = part2(testLines);
 
         log.info("Should be {}", expectedTestResult);
         log.info(resultMessage, testResult);
 
         if (testResult != expectedTestResult)
+            log.error("The test result doesn't match the expected value.");
+
+        expectedTestResult2 = 64;
+        testResult2 = part2(testLines2);
+
+        log.info("Should be {}", expectedTestResult2);
+        log.info(resultMessage, testResult2);
+
+        if (testResult2 != expectedTestResult2)
             log.error("The test result doesn't match the expected value.");
 
         log.setLevel(Level.INFO);
@@ -125,8 +134,6 @@ public class Day16 {
         var end = map.entrySet().stream().filter(e -> e.getValue() == 'E').map(Entry::getKey).findAny().orElseThrow();
         map.remove(end);
 
-        //        Set<Coordinate> visited = new HashSet<>();
-        //        visited.add(start);
         Queue<Path> pathsToCheck = new ArrayDeque<>();
         pathsToCheck.add(new Path(Arrays.asList(new Step(start, Direction.RIGHT)), Set.of(start)));
 
@@ -210,13 +217,89 @@ public class Day16 {
 
 
     /**
+     * Analyze your map further. How many tiles are part of at least one of the
+     * best paths through the maze?
      * 
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
     private static long part2(final List<String> lines) {
 
-        return -1;
+        var map = Coordinate.mapCoordinates(lines);
+        var rows = lines.size();
+        var columns = lines.getFirst().length();
+
+        log.atDebug()
+           .setMessage("Map:\n{}")
+           .addArgument(() -> Coordinate.printMap(rows, columns, map))
+           .log();
+
+        // Find start and end
+        var start = map.entrySet().stream().filter(e -> e.getValue() == 'S').map(Entry::getKey).findAny().orElseThrow();
+        map.remove(start);
+        var end = map.entrySet().stream().filter(e -> e.getValue() == 'E').map(Entry::getKey).findAny().orElseThrow();
+        map.remove(end);
+
+        Queue<Path> pathsToCheck = new ArrayDeque<>();
+        pathsToCheck.add(new Path(Arrays.asList(new Step(start, Direction.RIGHT)), Set.of(start)));
+
+        List<Path> successfulPaths = new ArrayList<>();
+        long lowestScore = Long.MAX_VALUE;
+
+        Map<Step, Long> scores = new HashMap<>();
+
+        int pathsToCheckLog = 0;
+        while (!pathsToCheck.isEmpty()) {
+            if (Math.log(pathsToCheck.size()) > pathsToCheckLog) {
+                log.debug("Paths to check: {}", pathsToCheck.size());
+                pathsToCheckLog = (int) Math.ceil(Math.log(pathsToCheck.size()));
+            }
+
+            var path = pathsToCheck.poll();
+            var score = scorePath(path.steps());
+            if (score > lowestScore)
+                continue;
+
+            var lastStep = path.steps().getLast();
+            if (scores.merge(lastStep, score, Math::min) < score)
+                continue;
+
+            // Is it at the end?
+            if (lastStep.position().equals(end)) {
+                successfulPaths.add(path);
+                lowestScore = score;
+                log.info("New low score: {}", score);
+            }
+
+            // Can it continue?
+            ORTHOGONAL_DIRECTIONS.stream()
+                                 .map(d -> new Step(lastStep.position().translate(d, 1), d))
+                                 .filter(s -> !(s.direction().equals(lastStep.direction().opposite()) ||
+                                                path.positions().contains(s.position()) ||
+                                                map.containsKey(s.position())))
+                                 .forEach(s -> {
+                                     var newSteps = new ArrayList<Step>(path.steps());
+                                     newSteps.add(s);
+                                     var newPositions = new HashSet<>(path.positions());
+                                     newPositions.add(s.position());
+                                     pathsToCheck.add(new Path(newSteps, newPositions));
+                                 });
+        }
+
+        final long finalLowestScore = lowestScore;
+        return successfulPaths.stream()
+                              .map(Path::steps)
+                              .filter(s -> scorePath(s) == finalLowestScore)
+                              .peek(steps -> {
+                                  if (log.isDebugEnabled()) {
+                                      var tempMap = new HashMap<>(map);
+                                      steps.forEach(s -> tempMap.put(s.position(), s.direction().getSymbol()));
+                                      log.debug("Path:\n{}", Coordinate.printMap(rows, columns, tempMap));
+                                  }
+                              })
+                              .flatMap(s -> s.stream().map(Step::position))
+                              .distinct()
+                              .count();
     }
 
 
