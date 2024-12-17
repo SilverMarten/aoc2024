@@ -28,6 +28,9 @@ public record Computer(Map<String, Long> registers, List<Integer> output) {
 
     public Computer() {
         this(new HashMap<>(), new ArrayList<>());
+        this.registers.put(REGISTER_A, 0L);
+        this.registers.put(REGISTER_B, 0L);
+        this.registers.put(REGISTER_C, 0L);
         this.registers.put(INSTRUCTION_POINTER, 0L);
     }
 
