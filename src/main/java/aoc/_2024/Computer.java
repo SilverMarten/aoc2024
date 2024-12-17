@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 /**
  * A representation of a computer from Day 17.
  */
-public record Computer(Map<String, Integer> registers, List<Integer> output) {
+public record Computer(Map<String, Long> registers, List<Integer> output) {
 
     public static final String REGISTER_A = "Register A";
 
@@ -28,7 +28,7 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
 
     public Computer() {
         this(new HashMap<>(), new ArrayList<>());
-        this.registers.put(INSTRUCTION_POINTER, 0);
+        this.registers.put(INSTRUCTION_POINTER, 0L);
     }
 
 
@@ -70,7 +70,7 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
      * Reset all registers to 0, and clear the output.
      */
     public void reset() {
-        this.registers.replaceAll((k, v) -> 0);
+        this.registers.replaceAll((k, v) -> 0L);
         this.output.clear();
 
     }
@@ -78,7 +78,7 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
 
 
     private int getInstructionPointer() {
-        return this.registers.get(INSTRUCTION_POINTER);
+        return this.registers.get(INSTRUCTION_POINTER).intValue();
     }
 
 
@@ -169,9 +169,9 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
          * @param input The input to the command.
          */
         private static void aDivide(Computer state, int input) {
-            int numerator = state.registers().get(Computer.REGISTER_A);
+            long numerator = state.registers().get(Computer.REGISTER_A);
             double denominator = Math.pow(2, resolveComboOperand(state.registers(), input));
-            int result = (int) (numerator / denominator);
+            long result = (long) (numerator / denominator);
             state.registers().put(Computer.REGISTER_A, result);
             state.incrementInstructionPointer();
         }
@@ -187,7 +187,7 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
          * @param input The input to the command.
          */
         private static void bXorLiteral(Computer state, int input) {
-            int result = state.registers().get(Computer.REGISTER_B) ^ input;
+            long result = state.registers().get(Computer.REGISTER_B) ^ input;
             state.registers().put(Computer.REGISTER_B, result);
             state.incrementInstructionPointer();
         }
@@ -203,7 +203,7 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
          * @param input The input to the command.
          */
         private static void bStore(Computer state, int input) {
-            int result = resolveComboOperand(state.registers(), input) % 8;
+            long result = resolveComboOperand(state.registers(), input) % 8;
             state.registers().put(Computer.REGISTER_B, result);
             state.incrementInstructionPointer();
         }
@@ -222,7 +222,7 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
          */
         private static void jumpIfNotZero(Computer state, int input) {
             if (state.registers().get(Computer.REGISTER_A) != 0)
-                state.registers().put(Computer.INSTRUCTION_POINTER, input);
+                state.registers().put(Computer.INSTRUCTION_POINTER, (long) input);
             else
                 state.incrementInstructionPointer();
         }
@@ -238,9 +238,9 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
          * @param input The input to the command.
          */
         private static void bXorC(Computer state, int input) {
-            int b = state.registers().get(Computer.REGISTER_B);
-            int c = state.registers().get(Computer.REGISTER_C);
-            int result = b ^ c;
+            long b = state.registers().get(Computer.REGISTER_B);
+            long c = state.registers().get(Computer.REGISTER_C);
+            long result = b ^ c;
             state.registers().put(Computer.REGISTER_B, result);
             state.incrementInstructionPointer();
         }
@@ -256,7 +256,7 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
          * @param input The input to the command.
          */
         private static void output(Computer state, int input) {
-            int value = resolveComboOperand(state.registers(), input) % 8;
+            int value = (int) (resolveComboOperand(state.registers(), input) % 8);
             state.output().add(value);
             state.incrementInstructionPointer();
         }
@@ -272,9 +272,9 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
          * @param input The input to the command.
          */
         private static void bDivide(Computer state, int input) {
-            int numerator = state.registers().get(Computer.REGISTER_A);
+            long numerator = state.registers().get(Computer.REGISTER_A);
             double denominator = Math.pow(2, resolveComboOperand(state.registers(), input));
-            int result = (int) (numerator / denominator);
+            long result = (long) (numerator / denominator);
             state.registers().put(Computer.REGISTER_B, result);
             state.incrementInstructionPointer();
         }
@@ -290,9 +290,9 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
          * @param input The input to the command.
          */
         private static void cDivide(Computer state, int input) {
-            int numerator = state.registers().get(Computer.REGISTER_A);
+            long numerator = state.registers().get(Computer.REGISTER_A);
             double denominator = Math.pow(2, resolveComboOperand(state.registers(), input));
-            int result = (int) (numerator / denominator);
+            long result = (long) (numerator / denominator);
             state.registers().put(Computer.REGISTER_C, result);
             state.incrementInstructionPointer();
         }
@@ -318,7 +318,7 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
          * @return The correct value based on the current state of the
          *         computer's registers and the input value.
          */
-        private static int resolveComboOperand(Map<String, Integer> registers, int input) {
+        private static long resolveComboOperand(Map<String, Long> registers, int input) {
             return switch (input) {
                 case 0, 1, 2, 3 -> input;
                 case 4 -> registers.get(Computer.REGISTER_A);

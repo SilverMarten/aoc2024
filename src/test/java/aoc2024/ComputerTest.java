@@ -23,7 +23,7 @@ class ComputerTest {
     @Test
     void testBStore() {
         Computer state = new Computer();
-        state.registers().put(REGISTER_C, 9);
+        state.registers().put(REGISTER_C, 9L);
 
         state.run(List.of(2, 6));
 
@@ -38,7 +38,7 @@ class ComputerTest {
     @Test
     void testOutput() {
         Computer state = new Computer();
-        state.registers().put(REGISTER_A, 10);
+        state.registers().put(REGISTER_A, 10L);
 
         state.run(List.of(5, 0, 5, 1, 5, 4));
 
@@ -55,7 +55,7 @@ class ComputerTest {
     @Timeout(value = 1,unit = TimeUnit.HOURS)
     void testADivide() {
         Computer state = new Computer();
-        state.registers().put(REGISTER_A, 2024);
+        state.registers().put(REGISTER_A, 2024L);
 
         state.run(List.of(0, 1, 5, 4, 3, 0));
 
@@ -71,7 +71,7 @@ class ComputerTest {
     @Test
     void testBXorLiteral() {
         Computer state = new Computer();
-        state.registers().put(REGISTER_B, 29);
+        state.registers().put(REGISTER_B, 29L);
 
         state.run(List.of(1, 7));
 
@@ -87,8 +87,8 @@ class ComputerTest {
     @Test
     void testBXorC() {
         Computer state = new Computer();
-        state.registers().put(REGISTER_B, 2024);
-        state.registers().put(REGISTER_C, 43_690);
+        state.registers().put(REGISTER_B, 2024L);
+        state.registers().put(REGISTER_C, 43_690L);
 
         state.run(List.of(4, 0));
 
