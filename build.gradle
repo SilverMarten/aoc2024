@@ -14,6 +14,13 @@ dependencies {
                    
     implementation 'org.slf4j:slf4j-api:latest.release',
                    'ch.qos.logback:logback-classic:latest.release'
+    
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:latest.release'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:latest.release'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 // Create a new DayN.java file from the template.
