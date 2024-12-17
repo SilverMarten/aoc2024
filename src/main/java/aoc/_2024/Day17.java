@@ -146,25 +146,33 @@ public class Day17 {
 
         // Try values for A until the output matches the program.
         Computer state = new Computer();
+        var testInput = Long.parseLong("6522275", 8);
+        state.registers().put(REGISTER_A, testInput);
+        state.run(program);
+        log.debug("Input of {}o gives output of {}", Long.toOctalString(testInput), state.output());
+        state.reset();
+
         long initialA = 0;
         var outputsMatch = false;
 
-        while (!outputsMatch && initialA < Integer.MAX_VALUE && initialA >= 0) {
+        while (!outputsMatch && initialA < 100 && initialA >= 0) {
             //            if (initialA % 10_000 == 0)
             //                log.debug("Trying {}", initialA);
 
             state.reset();
             state.registers().put(REGISTER_A, initialA);
             var canContinue = true;
+            outputsMatch = true;
             do {
                 canContinue = state.step(program);
                 var output = state.output();
-                outputsMatch = output.size() <= program.size() &&
-                               program.subList(0, output.size()).equals(state.output());
+                //                outputsMatch = output.size() <= program.size() &&
+                //                               program.subList(0, output.size()).equals(state.output());
             } while (canContinue && outputsMatch);
             outputsMatch = program.equals(state.output());
 
-            log.debug("Initial value {} resulting output: {}", initialA, state.output());
+            log.debug("Initial value {} ({}o {}b) resulting output: {}",
+                      initialA, Long.toOctalString(initialA), Long.toBinaryString(initialA), state.output());
 
             //            initialA+=8*8*x++;
             //            initialA+=8;
