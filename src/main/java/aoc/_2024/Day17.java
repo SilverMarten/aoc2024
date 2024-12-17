@@ -66,7 +66,8 @@ public class Day17 {
 
         List<String> testLines2 = FileUtils.readFile(TEST_INPUT_TXT_2);
         var expectedTestResult2 = 117_440;
-        var testResult2 = part2(testLines2);
+        //        var testResult2 = part2(testLines2);
+        var testResult2 = part2_sample2_reverseEngineered(testLines2);
 
         log.info("Should be {}", expectedTestResult2);
         log.info(resultMessage, testResult2);
@@ -96,7 +97,7 @@ public class Day17 {
         Computer state = new Computer();
         lines.stream()
              .filter(l -> l.startsWith("Register"))
-             .forEach(l -> state.registers().put(l.split(inputDelimiter)[0], Integer.valueOf(l.split(inputDelimiter)[1])));
+             .forEach(l -> state.registers().put(l.split(inputDelimiter)[0], Long.valueOf(l.split(inputDelimiter)[1])));
 
         log.debug("Initial state:\n{}", state);
 
@@ -127,7 +128,7 @@ public class Day17 {
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
-    private static int part2(final List<String> lines) {
+    private static long part2(final List<String> lines) {
 
         var inputDelimiter = ": ";
 
@@ -145,12 +146,12 @@ public class Day17 {
 
         // Try values for A until the output matches the program.
         Computer state = new Computer();
-        int initialA = 1;
+        long initialA = 0;
         var outputsMatch = false;
 
-        while (!outputsMatch && initialA < Integer.MAX_VALUE && initialA > 0) {
-            if (initialA % 10_000 == 0)
-                log.debug("Trying {}", initialA);
+        while (!outputsMatch && initialA < Integer.MAX_VALUE && initialA >= 0) {
+            //            if (initialA % 10_000 == 0)
+            //                log.debug("Trying {}", initialA);
 
             state.reset();
             state.registers().put(REGISTER_A, initialA);
@@ -163,14 +164,61 @@ public class Day17 {
             } while (canContinue && outputsMatch);
             outputsMatch = program.equals(state.output());
 
-            //            log.debug("Initial value {} resulting output: {}", initialA, state.output());
+            log.debug("Initial value {} resulting output: {}", initialA, state.output());
 
+            //            initialA+=8*8*x++;
+            //            initialA+=8;
             initialA++;
         }
 
         log.debug("Final state:\n{}", state);
 
         return initialA;
+    }
+
+
+
+    /**
+     * The sample program for part two converts the initial A value into an
+     * octal number by dividing by 8 and outputting the mod 8 value.
+     * 
+     * @param lines The input lines which have the program in them.
+     * @return The lowest positive integer value which produces the program
+     *         itself as an output.
+     */
+    private static long part2_sample2_reverseEngineered(final List<String> lines) {
+
+        var inputDelimiter = ": ";
+
+        // Parse the program
+        var program = lines.stream()
+                           .filter(l -> l.startsWith("Program:"))
+                           .map(l -> l.split(inputDelimiter)[1].split(","))
+                           .flatMap(Arrays::stream)
+                           .map(Integer::valueOf)
+                           .toList();
+        log.atDebug()
+           .setMessage("Program: {}")
+           .addArgument(() -> program.stream().map(Object::toString).collect(Collectors.joining(",")))
+           .log();
+
+        //        var initialA = IntStream.range(0, program.size())
+        //                                .mapToLong(i -> (long) (Math.pow(8, i + 1)) * program.get(i))
+        //                                .sum();
+
+        var initialA = Long.parseLong(program.reversed().stream().map(Object::toString).collect(Collectors.joining()), 8) * 8;
+
+        // Try it
+        Computer state = new Computer();
+        state.registers().put(REGISTER_A, initialA);
+        state.run(program);
+
+        log.debug("Final state:\n{}", state);
+        if (!state.output().equals(program))
+            log.error("The inital input of {} resulted in an output of {} instead of the input program.", initialA, state.output());
+
+        return initialA;
+
     }
 
 }
