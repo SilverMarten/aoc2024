@@ -33,16 +33,46 @@ public record Computer(Map<String, Integer> registers, List<Integer> output) {
 
 
 
+    /**
+     * Execute the entire program.
+     * 
+     * @param program The program instructions and inputs.
+     */
     public void run(List<Integer> program) {
+        while (this.step(program))
+            ;
+    }
+
+
+
+    /**
+     * Execute the next instruction in the program based on the instruction
+     * pointer.
+     * 
+     * @param program The program instructions and inputs.
+     * @return {@code true} if the program can continue. {@code false} if the
+     *         instruction pointer is past the end of the program.
+     */
+    public boolean step(List<Integer> program) {
         int ip = getInstructionPointer();
-        while (ip < program.size()) {
+        if (ip < program.size()) {
             var instruction = Instruction.fromOpcode(program.get(ip));
             int input = program.get(ip + 1);
 
             instruction.execute(this, input);
-
-            ip = this.getInstructionPointer();
         }
+        return this.getInstructionPointer() < program.size();
+    }
+
+
+
+    /**
+     * Reset all registers to 0, and clear the output.
+     */
+    public void reset() {
+        this.registers.replaceAll((k, v) -> 0);
+        this.output.clear();
+
     }
 
 

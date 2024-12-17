@@ -1,7 +1,8 @@
 package aoc._2024;
 
+import static aoc._2024.Computer.REGISTER_A;
+
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,8 @@ public class Day17 {
     private static final String INPUT_TXT = "input/Day17.txt";
 
     private static final String TEST_INPUT_TXT = "testInput/Day17.txt";
+
+    private static final String TEST_INPUT_TXT_2 = "testInput/Day17-2.txt";
 
 
 
@@ -56,21 +59,22 @@ public class Day17 {
         log.info(resultMessage, part1Result.stream().map(Object::toString).collect(Collectors.joining(",")));
 
         // PART 2
-        resultMessage = "{}";
+        resultMessage = "The lowest positive initial value for register A that causes the program to output a copy of itself is: {}";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        //        expectedTestResult = 1_234_567_890;
-        testResult = part2(testLines);
+        List<String> testLines2 = FileUtils.readFile(TEST_INPUT_TXT_2);
+        var expectedTestResult2 = 117_440;
+        var testResult2 = part2(testLines2);
 
-        log.info("Should be {}", expectedTestResult);
-        log.info(resultMessage, testResult);
+        log.info("Should be {}", expectedTestResult2);
+        log.info(resultMessage, testResult2);
 
-        if (!expectedTestResult.equals(testResult))
+        if (testResult2 != expectedTestResult2)
             log.error("The test result doesn't match the expected value.");
 
-        log.setLevel(Level.INFO);
+        //        log.setLevel(Level.INFO);
 
         log.info(resultMessage, part2(lines));
     }
@@ -117,13 +121,56 @@ public class Day17 {
 
 
     /**
+     * What is the lowest positive initial value for register A that causes the
+     * program to output a copy of itself?
      * 
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
-    private static List<Integer> part2(final List<String> lines) {
+    private static int part2(final List<String> lines) {
 
-        return Collections.emptyList();
+        var inputDelimiter = ": ";
+
+        // Parse the program
+        var program = lines.stream()
+                           .filter(l -> l.startsWith("Program:"))
+                           .map(l -> l.split(inputDelimiter)[1].split(","))
+                           .flatMap(Arrays::stream)
+                           .map(Integer::valueOf)
+                           .toList();
+        log.atDebug()
+           .setMessage("Program: {}")
+           .addArgument(() -> program.stream().map(Object::toString).collect(Collectors.joining(",")))
+           .log();
+
+        // Try values for A until the output matches the program.
+        Computer state = new Computer();
+        int initialA = 1;
+        var outputsMatch = false;
+
+        while (!outputsMatch && initialA < Integer.MAX_VALUE && initialA > 0) {
+            if (initialA % 10_000 == 0)
+                log.debug("Trying {}", initialA);
+
+            state.reset();
+            state.registers().put(REGISTER_A, initialA);
+            var canContinue = true;
+            do {
+                canContinue = state.step(program);
+                var output = state.output();
+                outputsMatch = output.size() <= program.size() &&
+                               program.subList(0, output.size()).equals(state.output());
+            } while (canContinue && outputsMatch);
+            outputsMatch = program.equals(state.output());
+
+            //            log.debug("Initial value {} resulting output: {}", initialA, state.output());
+
+            initialA++;
+        }
+
+        log.debug("Final state:\n{}", state);
+
+        return initialA;
     }
 
 }
