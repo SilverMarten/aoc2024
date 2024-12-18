@@ -182,6 +182,70 @@ public class Day18 {
      */
     private static Coordinate part2(List<Coordinate> memory, int size, int limit) {
 
+        var validRange = Range.of(0, size);
+        var start = Coordinate.of(0, 0);
+        var end = Coordinate.of(size, size);
+        Set<Coordinate> visited = new HashSet<>();
+        do {
+
+            var corruptedSpaces = memory.stream().limit(limit++).collect(Collectors.toSet());
+            log.debug("Corrupted memory: {}", corruptedSpaces);
+            log.atDebug()
+               .setMessage("Memory after {} bytes:\n{}")
+               .addArgument(limit)
+               .addArgument(() -> Coordinate.printMap(0, 0, size, size, corruptedSpaces))
+               .log();
+
+            visited.clear();
+
+            // Start from the end, and compute the minimum distance to reach it
+            List<Coordinate> spacesToCheck = new ArrayList<>();
+            Set<Coordinate> nextSpacesToCheck = new HashSet<>();
+            spacesToCheck.add(end);
+
+            while (!spacesToCheck.isEmpty()) {
+                var space = spacesToCheck.removeLast();
+                visited.add(space);
+
+                // Find spaces to check next
+                space.findOrthogonalAdjacent()
+                     .stream()
+                     .filter(c -> validRange.contains(c.getRow()) && validRange.contains(c.getColumn()) &&
+                                  !corruptedSpaces.contains(c) && !visited.contains(c))
+                     .forEach(nextSpacesToCheck::add);
+
+                if (spacesToCheck.isEmpty()) {
+                    spacesToCheck.addAll(nextSpacesToCheck);
+                    nextSpacesToCheck.clear();
+                }
+            }
+
+            log.atDebug()
+               .setMessage("Paths from end:\n{}")
+               .addArgument(() -> Coordinate.printMap(0, 0, size, size, visited, 'o', corruptedSpaces, '#'))
+               .log();
+        } while (visited.contains(start));
+
+        return memory.get(limit - 2);
+    }
+
+
+
+    /**
+     * Simulate more of the bytes that are about to corrupt your memory space.
+     * What are the coordinates of the first byte that will prevent the exit
+     * from being reachable from your starting position? (Provide the answer as
+     * two integers separated by a comma with no other characters.)
+     * 
+     * @param memory The coordinates of the memory read from the input.
+     * @param size The size of the space in which you can move.
+     * @param limit The number of bytes to place to begin with.
+     * 
+     * @return The location of the first byte to prevent the exit from being
+     *         reached.
+     */
+    private static Coordinate part2_slow(List<Coordinate> memory, int size, int limit) {
+
         while (part1(memory, size, ++limit) > 0)
             ;
 
