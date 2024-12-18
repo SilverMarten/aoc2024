@@ -75,23 +75,24 @@ public class Day18 {
         log.info(resultMessage, part1(memory, size, limit));
 
         // PART 2
-        resultMessage = "{}";
+        resultMessage = "The coordinates of the first byte that prevents the exit from being reachable are {},{}.";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
-        testResult = part2(testLines);
+        var expectedTestResult2 = Coordinate.of(1, 6);
+        var testResult2 = part2(testMemory, testSize, testLimit);
 
-        log.info("Should be {}", expectedTestResult);
-        log.info(resultMessage, testResult);
+        log.info("Should be {},{}", expectedTestResult2.getColumn(), expectedTestResult2.getRow());
+        log.info(resultMessage, testResult2.getColumn(), testResult2.getRow());
 
-        if (testResult != expectedTestResult)
+        if (!expectedTestResult2.equals(testResult2))
             log.error("The test result doesn't match the expected value.");
 
         log.setLevel(Level.INFO);
 
-        log.info(resultMessage, part2(lines));
+        var part2Result = part2(memory, size, limit);
+        log.info(resultMessage, part2Result.getColumn(), part2Result.getRow());
     }
 
 
@@ -161,19 +162,30 @@ public class Day18 {
                                                   '#'))
            .log();
 
-        return minDistanceToEnd.get(Coordinate.of(0, 0));
+        return minDistanceToEnd.getOrDefault(Coordinate.of(0, 0), -1);
     }
 
 
 
     /**
+     * Simulate more of the bytes that are about to corrupt your memory space.
+     * What are the coordinates of the first byte that will prevent the exit
+     * from being reachable from your starting position? (Provide the answer as
+     * two integers separated by a comma with no other characters.)
      * 
-     * @param lines The lines read from the input.
-     * @return The value calculated for part 2.
+     * @param memory The coordinates of the memory read from the input.
+     * @param size The size of the space in which you can move.
+     * @param limit The number of bytes to place to begin with.
+     * 
+     * @return The location of the first byte to prevent the exit from being
+     *         reached.
      */
-    private static long part2(final List<String> lines) {
+    private static Coordinate part2(List<Coordinate> memory, int size, int limit) {
 
-        return -1;
+        while (part1(memory, size, ++limit) > 0)
+            ;
+
+        return memory.get(limit - 1);
     }
 
 }
