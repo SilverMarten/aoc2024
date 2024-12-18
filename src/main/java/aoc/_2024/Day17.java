@@ -2,9 +2,12 @@ package aoc._2024;
 
 import static aoc._2024.Computer.REGISTER_A;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.slf4j.LoggerFactory;
 
@@ -66,8 +69,7 @@ public class Day17 {
 
         List<String> testLines2 = FileUtils.readFile(TEST_INPUT_TXT_2);
         var expectedTestResult2 = 117_440;
-        //        var testResult2 = part2(testLines2);
-        var testResult2 = part2_sample2_reverseEngineered(testLines2);
+        var testResult2 = part2(testLines2);
 
         log.info("Should be {}", expectedTestResult2);
         log.info(resultMessage, testResult2);
@@ -75,9 +77,10 @@ public class Day17 {
         if (testResult2 != expectedTestResult2)
             log.error("The test result doesn't match the expected value.");
 
-        //        log.setLevel(Level.INFO);
+        log.setLevel(Level.INFO);
 
         log.info(resultMessage, part2(lines));
+
     }
 
 
@@ -129,6 +132,105 @@ public class Day17 {
      * @return The value calculated for part 2.
      */
     private static long part2(final List<String> lines) {
+
+        var inputDelimiter = ": ";
+
+        // Parse the program
+        var program = lines.stream()
+                           .filter(l -> l.startsWith("Program:"))
+                           .map(l -> l.split(inputDelimiter)[1].split(","))
+                           .flatMap(Arrays::stream)
+                           .map(Integer::valueOf)
+                           .toList();
+        log.atDebug()
+           .setMessage("Program: {}")
+           .addArgument(() -> program.stream().map(Object::toString).collect(Collectors.joining(",")))
+           .log();
+
+        // Try adding digits to the input as long as its matching the output
+        int digit = 0;
+        List<Long> bases = new ArrayList<>();
+        List<Long> nextBases = new ArrayList<>();
+        bases.add(0L);
+        var programSize = program.size();
+        while (digit < programSize && !bases.isEmpty()) {
+            var base = bases.removeLast();
+            var localDigit = digit;
+            IntStream.rangeClosed(0, 7)
+                     .forEach(i -> {
+                         var input = base * 8 + i;
+                         var output = runComputerWithInput(input, program);
+                         var outputSize = output.size();
+                         if (outputSize > localDigit &&
+                             output.equals(program.subList(programSize - localDigit - 1, programSize))) {
+                             nextBases.add(input);
+                         }
+                     });
+            if (bases.isEmpty()) {
+                digit++;
+                bases.addAll(nextBases);
+                nextBases.clear();
+            }
+        }
+        log.debug("Found options: {}", bases);
+
+        // Double check
+        var finalInput = bases.stream()
+                              .mapToLong(Long::longValue)
+                              .filter(i -> runComputerWithInput(i, program).equals(program))
+                              .min()
+                              .orElse(-1);
+
+        var finalOutput = runComputerWithInput(finalInput, program);
+        if (finalOutput.equals(program))
+            log.debug("Success!");
+
+        // Begin a REPL loop taking numbers from input
+        /*
+        Scanner scanner = new Scanner(System.in);
+        long input = 0;
+        while (input >= 0) {
+            input = Long.parseLong(scanner.nextLine(), 8);
+            runComputerWithInput(input, program);
+        }
+        scanner.close();
+        */
+
+        return finalInput;
+    }
+
+
+
+    /**
+     * A helpful method to run the given program on the computer with a given A
+     * register starting value.
+     * 
+     * @param aRegister The value to initialize the A register with.
+     * @param program The program to run.
+     * @return The output of running the program.
+     */
+    private static List<Integer> runComputerWithInput(long aRegister, List<Integer> program) {
+        Computer state = new Computer();
+        state.registers().put(REGISTER_A, aRegister);
+        state.run(program);
+        log.debug("Input of {}o gives output of {}", Long.toOctalString(aRegister), state.output());
+        return state.output();
+    }
+
+
+
+    /**
+     * This worked for the test input, but the number for the real input was
+     * greater than {@link Integer#MAX_VALUE}. It took 11 minutes to scan
+     * through them all.
+     * <p>
+     * What is the lowest positive initial value for register A that causes the
+     * program to output a copy of itself?
+     * 
+     * @param lines The lines read from the input.
+     * @return The value calculated for part 2.
+     */
+    private static long part2_x(final List<String> lines) {
 
         var inputDelimiter = ": ";
 
