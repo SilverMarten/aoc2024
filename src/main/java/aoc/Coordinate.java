@@ -6,14 +6,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * A coordinate of row and column.
@@ -564,8 +567,40 @@ public final class Coordinate implements Comparable<Coordinate> {
         return printout.toString();
     }
 
+
+
     /**
-     * Find the distinct combinations of pairs of {@link Coordinate}s in the given collection.
+     * Create a printout of the map.
+     * 
+     * @param minRow The lowest numbered row in the map.
+     * @param minColumn The lowest numbered column in the map.
+     * @param maxRow The highest numbered row in the map.
+     * @param maxColumn The highest numbered column in the map.
+     * @param firstCoordinates The first set of coordinates to display. The
+     *            coordinate range is expected to start at 1 and increase.
+     * @param firstMarker The character to print at the given coordinates in the
+     *            first set.
+     * @param secondCoordinates The second set of coordinates to display. The
+     *            coordinate range is expected to start at 1 and increase.
+     * @param secondMarker The character to print at the given coordinates in
+     *            the second set.
+     * @return A string representation of the map.
+     */
+    public static String printMap(int minRow, int minColumn, int maxRow, int maxColumn,
+                                  Set<Coordinate> firstCoordinates, char firstMarker,
+                                  Set<Coordinate> secondCoordinates, char secondMarker) {
+        var map = Stream.of(firstCoordinates.stream().map(c -> Pair.of(c, firstMarker)),
+                            secondCoordinates.stream().map(c -> Pair.of(c, secondMarker)))
+                        .flatMap(Function.identity())
+                        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        return Coordinate.printMap(minRow, minColumn, maxRow, maxColumn, map, Function.identity());
+    }
+
+
+
+    /**
+     * Find the distinct combinations of pairs of {@link Coordinate}s in the
+     * given collection.
      * 
      * @param values The collection of values to pair up.
      * @return The set of pairs of combinations of the given coordinates.
@@ -579,6 +614,8 @@ public final class Coordinate implements Comparable<Coordinate> {
                                          .map(v2 -> new CoordinatePair(v, v2)))
                      .collect(Collectors.toSet());
     }
+
+
 
     public record CoordinatePair(Coordinate c1, Coordinate c2) {
     }
