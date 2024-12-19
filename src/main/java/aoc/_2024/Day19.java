@@ -1,10 +1,21 @@
 package aoc._2024;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.apache.commons.collections4.IterableUtils;
 import org.slf4j.LoggerFactory;
 
 import aoc.FileUtils;
@@ -47,7 +58,7 @@ public class Day19 {
         if (testResult != expectedTestResult)
             log.error("The test result doesn't match the expected value.");
 
-        log.setLevel(Level.INFO);
+        //        log.setLevel(Level.INFO);
 
         // Read the real file
         List<String> lines = FileUtils.readFile(INPUT_TXT);
@@ -85,7 +96,11 @@ public class Day19 {
      */
     private static long part1(final List<String> lines) {
 
-        Set<String> towels = Set.of(lines.getFirst().split(", "));
+        //        Set<String> towels = new TreeSet<>(Comparator.comparing(String::length).thenComparing(Function.identity()).reversed());
+        //        Set<String> towels = new HashSet<>();
+        //        towels.addAll(Set.of(lines.getFirst().split(", ")));
+        Map<String, Boolean> towels = new HashMap<>();
+        Stream.of(lines.getFirst().split(", ")).forEach(t -> towels.put(t, true));
 
         List<String> patterns = lines.subList(2, lines.size());
 
@@ -94,27 +109,47 @@ public class Day19 {
 
 
 
-    private static boolean canBeMade(String pattern, Set<String> towels) {
+    private static boolean canBeMade(String pattern, Map<String, Boolean> towels) {
 
-        List<TowelPattern> toCheck = new ArrayList<>();
+        List<TowelPattern> toCheck = new LinkedList<>();
         toCheck.add(new TowelPattern(pattern, new ArrayList<>()));
 
+        AtomicInteger maxTowelLength = new AtomicInteger(towels.keySet().stream().mapToInt(String::length).max().orElseThrow());
+        //        List<String> newTowels = new ArrayList<>();
         while (!toCheck.isEmpty()) {
             var checking = toCheck.removeLast();
 
             // If the whole pattern can be made, return true
-            if (checking.pattern.isEmpty())
+            if (checking.pattern().isEmpty() || towels.getOrDefault(checking.pattern(), false)) {
+                log.atDebug()
+                   .setMessage("Pattern {} can be made.")
+                   .addArgument(() -> checking.pattern() + checking.towels().stream().collect(Collectors.joining()))
+                   .log();
+
                 return true;
+            }
+
+            if (!towels.getOrDefault(checking.pattern(), true)) {
+                // The pattern is known to be impossible
+                return false;
+            }
 
             // Find the sub sequences which match towels
-            towels.stream()
-                  .filter(checking.pattern::startsWith)
-                  .map(t -> {
-                      var nextTowels = new ArrayList<>(checking.towels());
-                      nextTowels.add(t);
-                      return new TowelPattern(checking.pattern().substring(t.length()), nextTowels);
-                  })
-                  .forEach(toCheck::add);
+            IntStream.rangeClosed(1, Math.min(maxTowelLength.get(), checking.pattern().length()))
+                     .mapToObj(i -> checking.pattern().substring(0, i))
+                     .map(t -> {
+                         var nextTowels = new ArrayList<>(checking.towels());
+                         nextTowels.add(t);
+                         //                         newTowels.add(nextTowels.stream().collect(Collectors.joining()));
+                         var validPattern = nextTowels.stream().collect(Collectors.joining());
+                         maxTowelLength.set(Math.max(maxTowelLength.get(), validPattern.length()));
+                         towels.put(validPattern, true);
+                         return new TowelPattern(checking.pattern().substring(t.length()), nextTowels);
+                     })
+                     .forEach(toCheck::add);
+            // Add any new combinations
+            //            maxTowelLength = Math.max(maxTowelLength, newTowels.stream().mapToInt(String::length).max().orElse(0));
+            //            newTowels.clear();
         }
 
         return false;
