@@ -63,7 +63,7 @@ public class Day19 {
         // Read the real file
         List<String> lines = FileUtils.readFile(INPUT_TXT);
 
-        log.info(resultMessage, part1(lines));
+        log.info(resultMessage, part1(lines)); // Greater than 272, not 291, 390
 
         // PART 2
         resultMessage = "{}";
@@ -118,38 +118,99 @@ public class Day19 {
         //        List<String> newTowels = new ArrayList<>();
         while (!toCheck.isEmpty()) {
             var checking = toCheck.removeLast();
+            var checkingPattern = checking.pattern();
+
+            // The pattern is known
+            if (towels.containsKey(checkingPattern)) {
+                //                continue;
+
+                if (Boolean.FALSE.equals(towels.get(checkingPattern))) {
+                    //                    towels.put(checking.towels().getLast() + checkingPattern, false);
+                    //                    return false;
+                    //                    continue;
+                } else {
+                    checking.towels.add(checkingPattern);
+                    /*IntStream.rangeClosed(2, checking.towels().size())
+                             .forEach(i -> {
+                                 var tempTowels = checking.towels();
+                                 var tempPattern = tempTowels.subList(tempTowels.size() - i, tempTowels.size())
+                                                             .stream()
+                                                             .collect(Collectors.joining());
+                                 //  checking.towels()
+                                 //                        .reversed()
+                                 //                        .stream()
+                                 //                        .limit(i)
+                                 //                        .sorted(Comparator.reverseOrder())
+                                 //                        .collect(Collectors.joining());
+                                 towels.put(tempPattern, true);
+                             });*/
+                    var validPattern = checking.towels().stream().collect(Collectors.joining());
+                    log.atDebug()
+                       .setMessage("Pattern {} can be made. {}")
+                       .addArgument(validPattern)
+                       .addArgument(checking)
+                       .log();
+                    if (!validPattern.equals(pattern))
+                        log.error("The \"valid pattern\" {} doesn't match the given pattern {}.",
+                                  validPattern, pattern);
+
+                    maxTowelLength.set(Math.max(maxTowelLength.get(), validPattern.length()));
+                    //                    towels.put(validPattern, true);
+                    return true;
+                }
+            }
 
             // If the whole pattern can be made, return true
-            if (checking.pattern().isEmpty() || towels.getOrDefault(checking.pattern(), false)) {
+            /*  if (checkingPattern.isEmpty()) {
+                checking.towels.add(checkingPattern);
+                IntStream.rangeClosed(1, checking.towels().size())
+                         .forEach(i -> {
+                             var tempPattern = checking.towels().stream().limit(i).collect(Collectors.joining());
+                             towels.put(tempPattern, true);
+                         });
+                var validPattern = checking.towels().stream().collect(Collectors.joining());
                 log.atDebug()
                    .setMessage("Pattern {} can be made.")
-                   .addArgument(() -> checking.pattern() + checking.towels().stream().collect(Collectors.joining()))
+                   .addArgument(validPattern)
                    .log();
-
+                if (!validPattern.equals(pattern))
+                    log.error("The \"valid pattern\" {} doesn't match the given pattern {}.",
+                              validPattern, pattern);
+            
+                maxTowelLength.set(Math.max(maxTowelLength.get(), validPattern.length()));
+                towels.put(validPattern, true);
                 return true;
-            }
-
-            if (!towels.getOrDefault(checking.pattern(), true)) {
-                // The pattern is known to be impossible
-                return false;
-            }
+            }*/
 
             // Find the sub sequences which match towels
-            IntStream.rangeClosed(1, Math.min(maxTowelLength.get(), checking.pattern().length()))
-                     .mapToObj(i -> checking.pattern().substring(0, i))
-                     .map(t -> {
-                         var nextTowels = new ArrayList<>(checking.towels());
-                         nextTowels.add(t);
-                         //                         newTowels.add(nextTowels.stream().collect(Collectors.joining()));
-                         var validPattern = nextTowels.stream().collect(Collectors.joining());
-                         maxTowelLength.set(Math.max(maxTowelLength.get(), validPattern.length()));
-                         towels.put(validPattern, true);
-                         return new TowelPattern(checking.pattern().substring(t.length()), nextTowels);
-                     })
-                     .forEach(toCheck::add);
+            var nextToCheck = IntStream.rangeClosed(1, Math.min(maxTowelLength.get(), checkingPattern.length()))
+                                       .mapToObj(i -> checkingPattern.substring(0, i))
+//                                       .filter(towels::containsKey)
+                                       .filter(t->towels.getOrDefault(t, false))
+                                       .map(t -> {
+                                           var nextTowels = new ArrayList<>(checking.towels());
+                                           nextTowels.add(t);
+                                           //                         newTowels.add(nextTowels.stream().collect(Collectors.joining()));
+                                           //                         var validPattern = nextTowels.stream().collect(Collectors.joining());
+                                           //                         maxTowelLength.set(Math.max(maxTowelLength.get(), validPattern.length()));
+                                           return new TowelPattern(checkingPattern.substring(t.length()), nextTowels);
+                                       })
+                                       .filter(t -> towels.getOrDefault(t.pattern(), true))
+                                       .toList();
             // Add any new combinations
             //            maxTowelLength = Math.max(maxTowelLength, newTowels.stream().mapToInt(String::length).max().orElse(0));
             //            newTowels.clear();
+
+            if (nextToCheck.isEmpty()) {
+                towels.put(checkingPattern, false);
+                log.debug("{} doesn't work", checking);
+            } else {
+                toCheck.add(checking);
+                toCheck.addAll(nextToCheck);
+                //                var validPattern = checking.towels().stream().collect(Collectors.joining());
+                //                maxTowelLength.set(Math.max(maxTowelLength.get(), validPattern.length()));
+                //                towels.put(validPattern, true);
+            }
         }
 
         return false;
