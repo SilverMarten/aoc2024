@@ -3,6 +3,7 @@ package aoc._2024;
 import java.util.List;
 import org.slf4j.LoggerFactory;
 
+import aoc.Coordinate;
 import aoc.FileUtils;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -31,6 +32,9 @@ public class Day${day} {
 
         // Read the test file
         List<String> testLines = FileUtils.readFile(TEST_INPUT_TXT);
+        var testMap = Coordinate.mapCoordinates(testLines);
+        var testRows = testLines.size();
+        var testColumns = testLines.getFirst().length();
 
         var expectedTestResult = 1_234_567_890;
         var testResult = part1(testLines);
@@ -45,6 +49,9 @@ public class Day${day} {
 
         // Read the real file
         List<String> lines = FileUtils.readFile(INPUT_TXT);
+        var map = Coordinate.mapCoordinates(lines);
+        var rows = lines.size();
+        var columns = lines.getFirst().length();
 
         log.info(resultMessage, part1(lines));
 
