@@ -163,6 +163,85 @@ public class Day19 {
 
 
 
+    private static long numberOfCombinations(String pattern, Map<String, Boolean> towels) {
+
+        Map<String, Long> numberOfCombinations = new HashMap<>();
+//        towels.keySet().stream().forEach(t -> numberOfCombinations.put(t, 1L));
+
+        List<TowelPattern> toCheck = new LinkedList<>();
+        toCheck.add(new TowelPattern(pattern, new ArrayList<>()));
+
+        AtomicInteger maxTowelLength = new AtomicInteger(towels.keySet().stream().mapToInt(String::length).max().orElseThrow());
+        while (!toCheck.isEmpty()) {
+            var checking = toCheck.removeLast();
+            var checkingPattern = checking.pattern();
+
+            // The pattern is known
+            /*
+            if (towels.containsKey(checkingPattern)) {
+                checking.towels.add(checkingPattern);
+                //                IntStream.rangeClosed(2, checking.towels().size())
+                //                         .forEach(i -> {
+                //                             var tempTowels = checking.towels();
+                //                             var tempPattern = tempTowels.subList(tempTowels.size() - i, tempTowels.size())
+                //                                                         .stream()
+                //                                                         .collect(Collectors.joining());
+                //                             towels.put(tempPattern, true);
+                //                         });
+                var validPattern = checking.towels().stream().collect(Collectors.joining());
+                log.atDebug()
+                   .setMessage("Pattern {} can be made. {}")
+                   .addArgument(validPattern)
+                   .addArgument(checking)
+                   .log();
+                if (!validPattern.equals(pattern))
+                    log.error("The \"valid pattern\" {} doesn't match the given pattern {}.",
+                              validPattern, pattern);
+            
+                maxTowelLength.set(Math.max(maxTowelLength.get(), validPattern.length()));
+                towels.put(validPattern, true);
+                continue;
+            }*/
+            
+            if(checkingPattern.isEmpty()) {
+                numberOfCombinations.put(checking.towels().getLast(), 1L);
+            }
+
+            // Find the sub sequences which match towels
+            var nextToCheck = IntStream.rangeClosed(1, Math.min(maxTowelLength.get(), checkingPattern.length()))
+                                       .mapToObj(i -> checkingPattern.substring(0, i))
+                                       //                                       .filter(t -> towels.getOrDefault(t, false))
+                                       .filter(towels::containsKey)
+                                       .map(t -> {
+                                           var nextTowels = new ArrayList<>(checking.towels());
+                                           nextTowels.add(t);
+                                           return new TowelPattern(checkingPattern.substring(t.length()), nextTowels);
+                                       })
+                                       //                                       .filter(t -> towels.getOrDefault(t.pattern(), true))
+                                       .toList();
+
+            if (nextToCheck.isEmpty()) {
+                //                towels.put(checkingPattern, false);
+                numberOfCombinations.put(checkingPattern, 0L);
+                log.trace("{} doesn't work", checking);
+            } else if (nextToCheck.stream().map(TowelPattern::pattern).allMatch(numberOfCombinations::containsKey)) {
+                var sum = nextToCheck.stream().map(TowelPattern::pattern).mapToLong(numberOfCombinations::get).sum();
+                numberOfCombinations.put(checkingPattern, sum);
+                log.debug("{} can be made {} ways: {}", pattern, sum, nextToCheck);
+            } else {
+                toCheck.add(checking);
+                toCheck.removeIf(t -> numberOfCombinations.containsKey(t.pattern()));
+                toCheck.addAll(nextToCheck);
+            }
+        }
+
+        var combinations = numberOfCombinations.getOrDefault(pattern, 0L);
+        log.debug("{} can be made {} different ways.", pattern, combinations);
+        return combinations;
+    }
+
+
+
     /**
      * They'll let you into the onsen as soon as you have the list. What do you
      * get if you add up the number of different ways you could make each
@@ -173,7 +252,12 @@ public class Day19 {
      */
     private static long part2(final List<String> lines) {
 
-        return -1;
+        Map<String, Boolean> towels = new HashMap<>();
+        Stream.of(lines.getFirst().split(", ")).forEach(t -> towels.put(t, true));
+
+        List<String> patterns = lines.subList(2, lines.size());
+
+        return patterns.stream().map(p -> numberOfCombinations(p, towels)).mapToLong(Long::longValue).sum();
     }
 
 
