@@ -71,6 +71,20 @@ public final class Coordinate implements Comparable<Coordinate> {
 
 
 
+    /**
+     * Compute the Manhattan distance between this {@link Coordinate} and the
+     * other given {@link Coordinate}.
+     * 
+     * @param other The other coordinate to use to compute the distance.
+     * @return The Manhattan distance (the sum of the difference between the
+     *         rows and columns) to the other point.
+     */
+    public int distanceTo(Coordinate other) {
+        return Math.abs(this.row - other.row) + Math.abs(this.column - other.column);
+    }
+
+
+
     public int getRow() {
         return row;
     }
