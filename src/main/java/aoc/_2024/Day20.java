@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -49,8 +50,6 @@ public class Day20 {
         // Read the test file
         List<String> testLines = FileUtils.readFile(TEST_INPUT_TXT);
         var testMap = Coordinate.mapCoordinates(testLines, '#');
-        var testRows = testLines.size();
-        var testColumns = testLines.getFirst().length();
         var testThreshold = 2;
 
         var expectedTestResult = 44;
@@ -67,21 +66,18 @@ public class Day20 {
         // Read the real file
         List<String> lines = FileUtils.readFile(INPUT_TXT);
         var map = Coordinate.mapCoordinates(lines, '#');
-        var rows = lines.size();
-        var columns = lines.getFirst().length();
         var threshold = 100;
 
         log.info(resultMessage, part1(map, threshold), threshold);
 
         // PART 2
-        //        resultMessage = "{}";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
         expectedTestResult = 285;
         testThreshold = 50;
-        testResult = part2(testMap, testRows, testColumns, testThreshold);
+        testResult = part2(testMap, testThreshold);
 
         log.info("Should be {}", expectedTestResult);
         log.info(resultMessage, testResult, testThreshold);
@@ -91,7 +87,7 @@ public class Day20 {
 
         log.setLevel(Level.INFO);
 
-        log.info(resultMessage, part2(map, rows, columns, threshold), threshold);
+        log.info(resultMessage, part2(map, threshold), threshold);
     }
 
 
@@ -182,12 +178,10 @@ public class Day20 {
      * would save you at least {@code threshold} picoseconds?
      * 
      * @param map The map read from the input.
-     * @param rows The number of rows in the map.
-     * @param columns The number of columns in the map.
      * @param threshold The minimum number of units saved to report on.
      * @return The value calculated for part 2.
      */
-    private static long part2(final Map<Coordinate, Character> map, int rows, int columns, int threshold) {
+    private static long part2(final Map<Coordinate, Character> map, int threshold) {
 
         Map<Coordinate, Location> locations = new HashMap<>();
 
@@ -252,15 +246,19 @@ public class Day20 {
      */
     private static Set<Coordinate> findAllWithin(int distance, Coordinate centre) {
         Set<Coordinate> coordinates = new HashSet<>();
-        coordinates.addAll(centre.findOrthogonalAdjacent());
+        Set<Coordinate> nextCoordinates = new HashSet<>();
+        nextCoordinates.addAll(centre.findOrthogonalAdjacent());
 
         IntStream.rangeClosed(2, distance)
                  .forEach(i -> {
-                     var newCoordinates = coordinates.stream()
-                                                     .map(Coordinate::findOrthogonalAdjacent)
-                                                     .flatMap(Set::stream)
-                                                     .collect(Collectors.toSet());
-                     coordinates.addAll(newCoordinates);
+                     var newCoordinates = nextCoordinates.stream()
+                                                         .map(Coordinate::findOrthogonalAdjacent)
+                                                         .flatMap(Set::stream)
+                                                         .filter(Predicate.not(coordinates::contains))
+                                                         .toList();
+                     coordinates.addAll(nextCoordinates);
+                     nextCoordinates.clear();
+                     nextCoordinates.addAll(newCoordinates);
                  });
 
         return coordinates;
