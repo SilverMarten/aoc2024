@@ -166,7 +166,7 @@ public class Day19 {
     private static long numberOfCombinations(String pattern, Map<String, Boolean> towels) {
 
         Map<String, Long> numberOfCombinations = new HashMap<>();
-//        towels.keySet().stream().forEach(t -> numberOfCombinations.put(t, 1L));
+//                towels.keySet().stream().forEach(t -> numberOfCombinations.put(t, 1L));
 
         List<TowelPattern> toCheck = new LinkedList<>();
         toCheck.add(new TowelPattern(pattern, new ArrayList<>()));
@@ -202,9 +202,10 @@ public class Day19 {
                 towels.put(validPattern, true);
                 continue;
             }*/
-            
-            if(checkingPattern.isEmpty()) {
-                numberOfCombinations.put(checking.towels().getLast(), 1L);
+
+            if (checkingPattern.isEmpty()) {
+                numberOfCombinations.putIfAbsent(checking.towels().getLast(), 1L);
+                continue;
             }
 
             // Find the sub sequences which match towels
@@ -228,6 +229,8 @@ public class Day19 {
                 var sum = nextToCheck.stream().map(TowelPattern::pattern).mapToLong(numberOfCombinations::get).sum();
                 numberOfCombinations.put(checkingPattern, sum);
                 log.debug("{} can be made {} ways: {}", pattern, sum, nextToCheck);
+            } else if (nextToCheck.stream().map(TowelPattern::pattern).allMatch(String::isEmpty)) {
+                numberOfCombinations.put(checkingPattern, 1L);
             } else {
                 toCheck.add(checking);
                 toCheck.removeIf(t -> numberOfCombinations.containsKey(t.pattern()));
