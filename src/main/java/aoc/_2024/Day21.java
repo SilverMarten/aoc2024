@@ -115,18 +115,25 @@ public class Day21 {
         var directionalPad1 = new DirectionalKeypad();
         var directionalPad2 = new DirectionalKeypad();
 
+        log.debug("Code: {}", code);
+
         code.chars().forEach(c -> {
+            log.debug("Numberic pad: {}\tDirectional pad 1: {}\tDirectional pad 2: {}",
+                      numericPad.getCurrentChar(), directionalPad1.getCurrentChar(), directionalPad2.getCurrentChar());
+
             // Get the moves for the numeric pad
-            var numericPadPath = numericPad.moveToButton((char) c)
+            var numericPadPath = numericPad.moveToButton((char) c, ' ')
                                            .stream()
                                            .map(Direction::getSymbol)
                                            .collect(Collectors.toCollection(ArrayList::new));
             // Press the button
             numericPadPath.add('A');
 
+            log.debug("Numeric pad move to the {}: {}", (char) c, numericPadPath);
+
             // Get the moves for the first directional pad
             var directionalPad1Path = numericPadPath.stream()
-                                                    .map(directionalPad1::moveToButton)
+                                                    .map(d -> directionalPad1.moveToButton(d, numericPad.getCurrentChar()))
                                                     .flatMap(l -> {
                                                         var chars = l.stream()
                                                                      .map(Direction::getSymbol)
@@ -137,9 +144,11 @@ public class Day21 {
                                                     })
                                                     .toList();
 
+            log.debug("Directional pad 1 move to the {}: {}", (char) c, directionalPad1Path);
+
             // Get the moves for the second directional pad
             var directionalPad2Path = directionalPad1Path.stream()
-                                                         .map(directionalPad2::moveToButton)
+                                                         .map(d -> directionalPad2.moveToButton(d, directionalPad1.getCurrentChar()))
                                                          .flatMap(l -> {
                                                              var chars = l.stream()
                                                                           .map(Direction::getSymbol)
@@ -149,6 +158,8 @@ public class Day21 {
                                                              return chars.stream();
                                                          })
                                                          .toList();
+
+            log.debug("Directional pad 2 move to the {}: {}", (char) c, directionalPad2Path);
 
             moves.addAll(directionalPad2Path);
         });
@@ -212,8 +223,19 @@ public class Day21 {
          * @param character The target character.
          * @return The list of directions to the target button.
          */
-        public abstract List<Direction> moveToButton(char character);
+        public abstract List<Direction> moveToButton(char character, char optimalStartChar);
 
+
+
+        public Coordinate getCurrentButton() {
+            return this.currentButton;
+        }
+
+
+
+        public char getCurrentChar() {
+            return this.buttons.get(this.currentButton);
+        }
     }
 
     private static class NumericKeypad extends Keypad {
@@ -228,29 +250,30 @@ public class Day21 {
 
 
         @Override
-        public List<Direction> moveToButton(char character) {
+        public List<Direction> moveToButton(char character, char optimalStartChar) {
             var targetLocation = this.buttons.getKey(character);
 
-            // Go up before left, right before down
             int distanceUp = this.currentButton.getRow() - targetLocation.getRow();
             int distanceLeft = this.currentButton.getColumn() - targetLocation.getColumn();
 
             List<Direction> directions = new ArrayList<>();
-
             if (distanceUp > 0) {
-                IntStream.range(0, distanceUp).forEach(i -> directions.add(UP));
-
-                if (distanceLeft > 0)
+                if (distanceLeft > 0) {
                     IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
-                else
+                    IntStream.range(0, distanceUp).forEach(i -> directions.add(UP));
+                } else {
+                    IntStream.range(0, distanceUp).forEach(i -> directions.add(UP));
                     IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
+                }
+
             } else {
-                if (distanceLeft > 0)
+                if (distanceLeft > 0) {
                     IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
-                else
+                    IntStream.range(0, -distanceUp).forEach(i -> directions.add(DOWN));
+                } else {
+                    IntStream.range(0, -distanceUp).forEach(i -> directions.add(DOWN));
                     IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
-
-                IntStream.range(0, -distanceUp).forEach(i -> directions.add(DOWN));
+                }
             }
 
             this.currentButton = targetLocation;
@@ -271,39 +294,91 @@ public class Day21 {
 
 
         @Override
-        public List<Direction> moveToButton(char character) {
-            var targetLocation = this.buttons.getKey(character);
-            var currentChar = buttons.get(this.currentButton);
+        public List<Direction> moveToButton(char character, char optimalStartChar) {
+            Direction optimalStartDirection = Direction.withSymbol(optimalStartChar);
+            Coordinate targetLocation = this.buttons.getKey(character);
+            char targetChar = buttons.get(targetLocation);
+            char currentChar = buttons.get(this.currentButton);
 
-            // Go down before left, right before up
             int distanceUp = this.currentButton.getRow() - targetLocation.getRow();
             int distanceLeft = this.currentButton.getColumn() - targetLocation.getColumn();
 
             List<Direction> directions = new ArrayList<>();
 
-            if (distanceUp < 0) {
+            // Avoid the empty space when going to/from the '<' button
+            if (targetChar == '<') {
+                // Go down before left
                 IntStream.range(0, -distanceUp).forEach(i -> directions.add(DOWN));
-
-                if (distanceLeft > 0)
-                    IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
-                else
-                    IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
-            } else {
-                if (distanceLeft > 0)
-                    IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
-                else
-                    IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
-
+                IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
+            } else if (currentChar == '<') {
+                // Go right before up
+                IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
                 IntStream.range(0, distanceUp).forEach(i -> directions.add(UP));
+            } else {
+
+                if (distanceUp > 0) {
+                    if (distanceLeft > 0) {
+                        IntStream.range(0, distanceUp).forEach(i -> directions.add(UP));
+                        IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
+                    } else {
+                        IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
+                        IntStream.range(0, distanceUp).forEach(i -> directions.add(UP));
+                    }
+
+                } else {
+                    if (distanceLeft > 0) {
+                        IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
+                        IntStream.range(0, -distanceUp).forEach(i -> directions.add(DOWN));
+                    } else {
+                        IntStream.range(0, -distanceUp).forEach(i -> directions.add(DOWN));
+                        IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
+                    }
+                }
+                /*
+                // If the optimalStartDirection is a direction that is needed, start with it
+                
+                if (distanceUp > 0) {
+                    //                    if (optimalStartDirection == UP) {
+                    //                        IntStream.range(0, distanceUp).forEach(i -> directions.add(UP));
+                    //
+                    //                        if (distanceLeft > 0)
+                    //                            IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
+                    //                        else
+                    //                            IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
+                    //                    } else {
+                    if (distanceLeft > 0)
+                        IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
+                    else
+                        IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
+                
+                    IntStream.range(0, distanceUp).forEach(i -> directions.add(UP));
+                    //                    }
+                } else {
+                    //                    if (optimalStartDirection == DOWN) {
+                    IntStream.range(0, -distanceUp).forEach(i -> directions.add(DOWN));
+                
+                    if (distanceLeft > 0)
+                        IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
+                    else
+                        IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
+                    //                    } else {
+                    //                        if (distanceLeft > 0)
+                    //                            IntStream.range(0, distanceLeft).forEach(i -> directions.add(LEFT));
+                    //                        else
+                    //                            IntStream.range(0, -distanceLeft).forEach(i -> directions.add(RIGHT));
+                    //
+                    //                        IntStream.range(0, -distanceUp).forEach(i -> directions.add(DOWN));
+                    //                    }
+                }
+                */
             }
+
             directions.stream().forEach(d -> {
                 this.currentButton = this.currentButton.translate(d, 1);
-                if (!buttons.containsKey(currentButton))
+                if (!buttons.containsKey(this.currentButton))
                     throw new IllegalStateException(String.format("The move from %s to %s crossed over a blank space!",
                                                                   currentChar, character));
             });
-
-//            this.currentButton = targetLocation;
 
             return directions;
         }
