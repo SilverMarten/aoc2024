@@ -9,6 +9,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.jgrapht.alg.clique.BronKerboschCliqueFinder;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DefaultUndirectedGraph;
+import org.jgrapht.nio.gml.GmlExporter;
 import org.slf4j.LoggerFactory;
 
 import aoc.FileUtils;
@@ -150,7 +154,27 @@ public class Day23 {
                                        .collect(Collectors.joining("\n")))
            .log();
 
-        return "";
+        DefaultUndirectedGraph<String, DefaultEdge> graph = new DefaultUndirectedGraph<>(DefaultEdge.class);
+
+        // add the vertices
+        computers.values().stream()
+                 .map(Computer::name)
+                 .forEach(graph::addVertex);
+
+        // add edges to create a circuit
+        computers.values().stream()
+                 .forEach(c1 -> c1.neighbours()
+                                  .stream()
+                                  .forEach(c2 -> graph.addEdge(c1.name(), c2.name())));
+
+        //        new GmlExporter<String, DefaultEdge>().exportGraph(graph, System.out);
+
+        var cliqueFinder = new BronKerboschCliqueFinder<String, DefaultEdge>(graph);
+        cliqueFinder.forEach(c -> log.debug("{}", c));
+
+        var maxClique = cliqueFinder.maximumIterator().next();
+        return maxClique.stream().sorted().collect(Collectors.joining(","));
+
     }
 
 

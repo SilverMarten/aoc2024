@@ -8,7 +8,8 @@ java {
 
 dependencies {
     implementation 'org.jgrapht:jgrapht-core:1.5.2',
-                   'org.jgrapht:jgrapht-ext:1.5.2'
+                   'org.jgrapht:jgrapht-ext:1.5.2',
+                   'org.jgrapht:jgrapht-io:1.5.2'
     implementation 'org.apache.commons:commons-lang3:latest.release',
                    'org.apache.commons:commons-collections4:latest.release'
                    
