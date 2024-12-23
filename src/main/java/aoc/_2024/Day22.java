@@ -1,9 +1,16 @@
 package aoc._2024;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.LoggerFactory;
 
 import aoc.FileUtils;
@@ -24,6 +31,8 @@ public class Day22 {
     private static final String INPUT_TXT = "input/Day22.txt";
 
     private static final String TEST_INPUT_TXT = "testInput/Day22.txt";
+
+    private static final String TEST_INPUT_2_TXT = "testInput/Day22-2.txt";
 
 
 
@@ -54,12 +63,13 @@ public class Day22 {
         log.info(resultMessage, part1(lines));
 
         // PART 2
-        resultMessage = "{}";
+        resultMessage = "The most bananas you can get is: {}";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
+        testLines = FileUtils.readFile(TEST_INPUT_2_TXT);
 
-        expectedTestResult = 1_234_567_890;
+        expectedTestResult = 23;
         testResult = part2(testLines);
 
         log.info("Should be {}", expectedTestResult);
@@ -70,7 +80,7 @@ public class Day22 {
 
         log.setLevel(Level.INFO);
 
-        log.info(resultMessage, part2(lines));
+        log.info(resultMessage, part2(lines)); // lower than 1647
     }
 
 
@@ -173,13 +183,57 @@ public class Day22 {
 
 
     /**
+     * Figure out the best sequence to tell the monkey so that by looking for
+     * that same sequence of changes in every buyer's future prices, you get the
+     * most bananas in total. What is the most bananas you can get?
      * 
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
     private static long part2(final List<String> lines) {
 
-        return -1;
+        List<Map<List<Integer>, Integer>> firstSequences = new ArrayList<>();
+
+        // Find all the sequences for each seller which result in particular sale prices
+        lines.stream()
+             .mapToLong(Long::parseLong)
+             .forEach(s -> {
+                 AtomicLong secret = new AtomicLong(s);
+                 var prices = IntStream.rangeClosed(1, 2001)
+                                       .map(i -> (int) (secret.updateAndGet(Day22::nextSecret) % 10))
+                                       .boxed()
+                                       .toList();
+
+                 Map<List<Integer>, Integer> sellerFirstPrices = new HashMap<>();
+                 IntStream.range(4, prices.size())
+                          .forEach(i -> {
+                              List<Integer> sequence = new ArrayList<>();
+                              sequence.add(prices.get(i) - prices.get(i - 1));
+                              sequence.add(prices.get(i - 1) - prices.get(i - 2));
+                              sequence.add(prices.get(i - 2) - prices.get(i - 3));
+                              sequence.add(prices.get(i - 3) - prices.get(i - 4));
+
+                              sellerFirstPrices.putIfAbsent(sequence, prices.get(i));
+                          });
+
+                 firstSequences.add(sellerFirstPrices);
+             });
+
+        Map<List<Integer>, Integer> sequenceTotals = new HashMap<>();
+        firstSequences.stream()
+                      .map(Map::entrySet)
+                      .flatMap(Set::stream)
+                      .forEach(e -> sequenceTotals.compute(e.getKey(), (k, v) -> e.getValue() + ObjectUtils.defaultIfNull(v, 0)));
+
+        var best = sequenceTotals.entrySet()
+                                 .stream()
+                                 .sorted(Comparator.comparing(Entry<List<Integer>, Integer>::getValue).reversed())
+                                 .findFirst()
+                                 .orElseThrow();
+
+        log.debug("The best sequence is {}, which gets you {} bananas.", best.getKey(), best.getValue());
+
+        return best.getValue();
     }
 
 }
