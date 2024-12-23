@@ -1,5 +1,6 @@
 package aoc._2024;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -58,23 +59,24 @@ public class Day23 {
         log.info(resultMessage, part1(lines));
 
         // PART 2
-        resultMessage = "{}";
+        resultMessage = "The password is: {}";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
-        testResult = part2(testLines);
+        var expectedTestResult2 = "co,de,ka,ta";
+        var testResult2 = part2(testLines);
 
-        log.info("Should be {}", expectedTestResult);
-        log.info(resultMessage, testResult);
+        log.info("Should be {}", expectedTestResult2);
+        log.info(resultMessage, testResult2);
 
-        if (testResult != expectedTestResult)
+        if (!expectedTestResult2.equals(testResult2))
             log.error("The test result doesn't match the expected value.");
 
         log.setLevel(Level.INFO);
 
-        log.info(resultMessage, part2(lines));
+        var password = part2(lines);
+        log.info(resultMessage, password);
     }
 
 
@@ -123,13 +125,32 @@ public class Day23 {
 
 
     /**
+     * What is the password to get into the LAN party?
      * 
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
-    private static long part2(final List<String> lines) {
+    private static String part2(final List<String> lines) {
+        Map<String, Computer> computers = new HashMap<>();
 
-        return -1;
+        lines.stream()
+             .map(l -> l.split("-"))
+             .forEach(c -> {
+                 var c1 = computers.computeIfAbsent(c[0], Computer::new);
+                 var c2 = computers.computeIfAbsent(c[1], Computer::new);
+                 c1.addNeighbour(c2);
+             });
+
+        log.atDebug()
+           .setMessage("Computers:\n{}")
+           .addArgument(() -> computers.values()
+                                       .stream()
+                                       .sorted(Comparator.comparing(Computer::name))
+                                       .map(Computer::toString)
+                                       .collect(Collectors.joining("\n")))
+           .log();
+
+        return "";
     }
 
 
