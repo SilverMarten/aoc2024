@@ -104,13 +104,16 @@ public class Day23 {
                                                .flatMap(c2 -> c2.neighbours()
                                                                 .stream()
                                                                 .filter(c3 -> c3.neighbours().contains(c1))
-                                                                .map(c3 -> List.of(c1, c2, c3))))
-                              .toList();
+                                                                .map(c3 -> Set.of(c1, c2, c3))))
+                              .collect(Collectors.toSet());
 
-        log.debug("Groups:\n{}", groups.stream().map(l -> l.stream()
-                                                          .map(Computer::name)
-                                                          .collect(Collectors.joining(",")))
-                                      .collect(Collectors.joining("\n")));
+        log.atDebug()
+           .setMessage("Groups:\n{}")
+           .addArgument(() -> groups.stream().map(l -> l.stream()
+                                                        .map(Computer::name)
+                                                        .collect(Collectors.joining(",")))
+                                    .collect(Collectors.joining("\n")))
+           .log();
 
         return groups.stream()
                      .filter(l -> l.stream().map(Computer::name).anyMatch(n -> n.startsWith("t")))
