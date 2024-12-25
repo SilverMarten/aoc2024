@@ -1,5 +1,7 @@
 package aoc._2024;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -10,6 +12,13 @@ import java.util.Queue;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.bidimap.DualHashBidiMap;
+import org.apache.commons.lang3.ObjectUtils;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleDirectedGraph;
+import org.jgrapht.nio.DefaultAttribute;
+import org.jgrapht.nio.gml.GmlExporter;
 import org.slf4j.LoggerFactory;
 
 import aoc.FileUtils;
@@ -60,18 +69,18 @@ public class Day24 {
         log.info(resultMessage, part1(lines));
 
         // PART 2
-        resultMessage = "{}";
+        resultMessage = "The swapped wires are: {}";
 
         log.info("Part 2:");
         log.setLevel(Level.DEBUG);
 
-        expectedTestResult = 1_234_567_890;
-        testResult = part2(testLines);
+        var expectedTestResult2 = "aaa,aoc,bbb,ccc,eee,ooo,z24,z99";
+        var testResult2 = part2(testLines);
 
-        log.info("Should be {}", expectedTestResult);
-        log.info(resultMessage, testResult);
+        log.info("Should be {}", expectedTestResult2);
+        log.info(resultMessage, testResult2);
 
-        if (testResult != expectedTestResult)
+        if (!expectedTestResult2.equals(testResult2))
             log.error("The test result doesn't match the expected value.");
 
         log.setLevel(Level.INFO);
@@ -149,13 +158,62 @@ public class Day24 {
 
 
     /**
+     * Your system of gates and wires has four pairs of gates which need their
+     * output wires swapped - eight wires in total. Determine which four pairs
+     * of gates need their outputs swapped so that your system correctly
+     * performs addition; what do you get if you sort the names of the eight
+     * wires involved in a swap and then join those names with commas?
      * 
      * @param lines The lines read from the input.
      * @return The value calculated for part 2.
      */
-    private static long part2(final List<String> lines) {
+    private static String part2(final List<String> lines) {
 
-        return -1;
+        Map<String, Boolean> values = new HashMap<>();
+
+        // Parse the inputs
+        lines.stream()
+             .filter(l -> l.contains(": "))
+             .map(l -> l.split(": "))
+             .forEach(v -> values.put(v[0], "1".equals(v[1])));
+
+        var functions = new DualHashBidiMap<>(Map.<String, BiFunction<Boolean, Boolean, Boolean>>of("AND", (a, b) -> a && b,
+                                                                                                    "OR", (a, b) -> a || b,
+                                                                                                    "XOR", (a, b) -> a ^ b));
+
+        // Parse the gates
+        var gates = lines.stream()
+                         .filter(l -> l.contains("->"))
+                         .map(l -> l.split(" "))
+                         .map(l -> new Gate(l[0], l[2], l[4], functions.get(l[1])))
+                         .toList();
+
+        Map<String, String> gateTypes = new HashMap<>();
+        gates.forEach(g -> gateTypes.put(g.result, functions.getKey(g.operation())));
+
+        Graph<String, DefaultEdge> graph = new SimpleDirectedGraph<>(DefaultEdge.class);
+
+        gates.forEach(g -> {
+            graph.addVertex(g.input1());
+            graph.addVertex(g.input2());
+            graph.addVertex(g.result());
+            graph.addEdge(g.input1(), g.result());
+            graph.addEdge(g.input2(), g.result());
+        });
+
+        var exporter = new GmlExporter<String, DefaultEdge>();
+        exporter.setVertexAttributeProvider(v -> Map.of("label",
+                                                        DefaultAttribute.createAttribute(ObjectUtils.defaultIfNull(gateTypes.get(v), "") +
+                                                                                         "\n" + v)));
+        exporter.setParameter(GmlExporter.Parameter.EXPORT_VERTEX_LABELS, true);
+
+        try (var fileOut = new FileWriter("Day 24 - part 2" + (log.isDebugEnabled() ? " - example" : "") + ".gml")) {
+            exporter.exportGraph(graph, fileOut);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return "";
     }
 
 
