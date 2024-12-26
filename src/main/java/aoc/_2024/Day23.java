@@ -1,18 +1,19 @@
 package aoc._2024;
 
+import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jgrapht.alg.clique.BronKerboschCliqueFinder;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultUndirectedGraph;
-import org.jgrapht.nio.gml.GmlExporter;
 import org.slf4j.LoggerFactory;
 
 import aoc.FileUtils;
@@ -174,6 +175,45 @@ public class Day23 {
 
         var maxClique = cliqueFinder.maximumIterator().next();
         return maxClique.stream().sorted().collect(Collectors.joining(","));
+
+    }
+
+
+
+    /**
+     * What is the password to get into the LAN party?
+     * 
+     * @param lines The lines read from the input.
+     * @return The value calculated for part 2.
+     */
+    private static String part2_2(final List<String> lines) {
+        Map<String, Computer> computers = new HashMap<>();
+
+        lines.stream()
+             .map(l -> l.split("-"))
+             .forEach(c -> {
+                 var c1 = computers.computeIfAbsent(c[0], Computer::new);
+                 var c2 = computers.computeIfAbsent(c[1], Computer::new);
+                 c1.addNeighbour(c2);
+             });
+
+        log.atDebug()
+           .setMessage("Computers:\n{}")
+           .addArgument(() -> computers.values()
+                                       .stream()
+                                       .sorted(Comparator.comparing(Computer::name))
+                                       .map(Computer::toString)
+                                       .collect(Collectors.joining("\n")))
+           .log();
+
+        
+        // Recursively break off chunks of the graph and find the maximum clique size
+        Set<Computer> remainingComputers = new HashSet<>(computers.values());
+        Queue<Set<Computer>> toCheck = new ArrayDeque<>();
+        
+//        toCheck.add(remainingComputers.re)
+
+        return "";
 
     }
 
